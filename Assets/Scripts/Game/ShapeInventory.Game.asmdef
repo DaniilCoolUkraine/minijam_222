@@ -1,0 +1,21 @@
+{
+  "name": "ShapeInventory.Game",
+  "rootNamespace": "ShapeInventory.Game",
+  "references": [
+    "ShapeInventory.Core",
+    "ShapeInventory.UI.Common",
+    "ShapeInventory.UI.PlayerInventory",
+    "ShapeInventory.UI.ObjectInventory",
+    "ShapeInventory.DragDrop",
+    "UnityEngine.UI"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

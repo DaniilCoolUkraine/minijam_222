@@ -1,0 +1,24 @@
+{
+  "name": "ShapeInventory.Editor",
+  "rootNamespace": "ShapeInventory.Editor",
+  "references": [
+    "ShapeInventory.Core",
+    "ShapeInventory.UI.Common",
+    "ShapeInventory.UI.PlayerInventory",
+    "ShapeInventory.UI.ObjectInventory",
+    "ShapeInventory.DragDrop",
+    "ShapeInventory.Game",
+    "UnityEngine.UI"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": false,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}
