@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 683b46613461a497db59cbaf3337a841, type: 3}
+  m_Name: Level_04_House
+  m_EditorClassIdentifier: ShapeInventory.Game::ShapeInventory.Game.LevelData
+  targetObject: {fileID: 11400000, guid: 6339d57c9c74a492081a8f7a74b2c85d, type: 2}
+  startingItems:
+  - {fileID: 11400000, guid: 54f6b02f853fc4e11bea81a0a56e5897, type: 2}
+  - {fileID: 11400000, guid: 96c768f918d964f3f91c1ab30cb37988, type: 2}
+  - {fileID: 11400000, guid: 202a852842c1f467d81b022179f09481, type: 2}
+  - {fileID: 11400000, guid: f7834760985a74b6daa4048e1aad4368, type: 2}
+  - {fileID: 11400000, guid: 54f6b02f853fc4e11bea81a0a56e5897, type: 2}
+  - {fileID: 11400000, guid: 23541d573ef484e21a690ed9aa018eac, type: 2}
+  - {fileID: 11400000, guid: 96c768f918d964f3f91c1ab30cb37988, type: 2}
+  - {fileID: 11400000, guid: 54cf73de23a834ef5b8eb9fc0dab40ae, type: 2}
+  - {fileID: 11400000, guid: 54f6b02f853fc4e11bea81a0a56e5897, type: 2}
+  - {fileID: 11400000, guid: 23541d573ef484e21a690ed9aa018eac, type: 2}
+  - {fileID: 11400000, guid: 96c768f918d964f3f91c1ab30cb37988, type: 2}
