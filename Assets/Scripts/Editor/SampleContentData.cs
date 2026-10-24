@@ -87,7 +87,6 @@ namespace ShapeInventory.Editor
             new EnchantedItemDef(EnchantmentType.Sharpness, "j"),
             new EnchantedItemDef(EnchantmentType.Sharpness, "dot"),
             new EnchantedItemDef(EnchantmentType.Sharpness, "domino"),
-            new EnchantedItemDef(EnchantmentType.Sharpness, "dominov"),
             new EnchantedItemDef(EnchantmentType.Sharpness, "i3"),
             new EnchantedItemDef(EnchantmentType.Sharpness, "i3v"),
             new EnchantedItemDef(EnchantmentType.Sharpness, "l3"),
@@ -198,15 +197,16 @@ namespace ShapeInventory.Editor
                 "No, now it's even worse! My arms hurt twice as much!"),
             new LevelDef(
                 "Level_03_Pitchfork", "pitchfork",
-                "Bah, Farmer Hank here. The handle snaps every time I toss a hay bale, so make it properly sturdy. The prongs should be decently sharp, but nothing crazy, I only stab hay.",
+                "Bah, Farmer Hank here. The handle snaps every time I toss a hay bale, so make it properly sturdy. The left prong should be decently sharp, and the right one needs just a bit less effort. Nothing crazy!",
                 new[]
                 {
                     new EnchantmentRequirement(EnchantmentType.Durability, 2),
                     new EnchantmentRequirement(EnchantmentType.Sharpness, 2),
+                    new EnchantmentRequirement(EnchantmentType.Efficiency, 1),
                 },
                 new[]
                 {
-                    "sharpness_dominov",
+                    "efficiency_dominov",
                     "haste_dominov",
                     "durability_i3v",
                     "sharpness_i4v",

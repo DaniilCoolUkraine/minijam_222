@@ -185,7 +185,7 @@ CELL_RANGE = {"axe": (4, 4), "pickaxe": (6, 6), "pitchfork": (8, 8), "scissors":
 DOC_REQS = {
     "axe": [("durability", 0)],
     "pickaxe": [("efficiency", 3), ("durability", 1)],
-    "pitchfork": [("durability", 2), ("sharpness", 2)],
+    "pitchfork": [("durability", 2), ("sharpness", 2), ("efficiency", 1)],
     "scissors": [("sharpness", 3), ("durability", 0)],
     "hammer": [("durability", 2), ("efficiency", 0), ("haste", 3)],
     "shovel": [("efficiency", 3), ("durability", 1), ("luck", 2)],
@@ -225,10 +225,10 @@ LEVELS = [
     },
     {   # tutorial: 5 entries, 3 right, 2 wrong (one unrequested type, one right type at the wrong tier)
         "asset": "Level_03_Pitchfork", "object": "pitchfork", "tutorial": True,
-        "reqs": [("durability", 2), ("sharpness", 2)],
-        "tiling": ["durability:i3v", "sharpness:l3_270", "sharpness:dominov"],
+        "reqs": [("durability", 2), ("sharpness", 2), ("efficiency", 1)],
+        "tiling": ["durability:i3v", "sharpness:l3_270", "efficiency:dominov"],
         "distractors": ["haste:dominov", "sharpness:i4v"],
-        "order": ["sharpness:dominov", "haste:dominov", "durability:i3v", "sharpness:i4v", "sharpness:l3_270"],
+        "order": ["efficiency:dominov", "haste:dominov", "durability:i3v", "sharpness:i4v", "sharpness:l3_270"],
     },
     {
         "asset": "Level_04_Scissors", "object": "scissors",
@@ -713,6 +713,10 @@ def verify():
             check(plain_count >= 1, name + ": plain filler expected from L6 on")
         # tutorial rules (levels 1-3: partial tool silhouettes, small inventories)
         tutorial = bool(lvl.get("tutorial"))
+        if tutorial:
+            # every part of the shape has its own requirement: a Full result is only possible with ALL pieces placed
+            check(len(reqs) == len(tiling) and len(set(e for e, _ in tiling)) == len(tiling),
+                  name + ": tutorial: one requirement (distinct type) per tiling piece, so Full needs a filled shape")
         if num == 1:
             check(len(items) == 1 and len(tiling) == 1 and not distractors and len(reqs) == 1 and plain_count == 0,
                   "L1: the inventory is exactly ONE correct piece (the stick)")
@@ -722,7 +726,7 @@ def verify():
                   "L2: 3 inventory entries = 2 correct + 1 wrong, 2 requirements")
             check(len(wrong_types) == 1, "L2: the wrong piece is of an unrequested type")
         if num == 3:
-            check(len(items) == 5 and len(tiling) == 3 and len(distractors) == 2 and len(reqs) == 2,
+            check(len(items) == 5 and len(tiling) == 3 and len(distractors) == 2 and len(reqs) == 3,
                   "L3: 5 inventory entries = 3 correct + 2 wrong")
             check(len(wrong_types) == 1 and any(d[0] in req_types for d in distractors),
                   "L3: one wrong piece of an unrequested type and one of a required type at the wrong tier")
