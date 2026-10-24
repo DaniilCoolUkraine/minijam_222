@@ -1,37 +1,48 @@
 #!/usr/bin/env python3
 """
-Level content source of truth + verifier for the Shape Inventory enchantment quests.
+Level content source of truth + verifier for the Shape Inventory enchantment quests (10-level campaign, docs/LEVELS.md).
 
 Usage (from the repo root):
     python3 Tools/verify_levels.py            # verify everything, also checks that SampleContentData.cs is in sync
     python3 Tools/verify_levels.py --emit     # (re)write Assets/Scripts/Editor/SampleContentData.cs from the data below
 
+Story / reaction texts come from Tools/level_texts.py (TEXTS[object_id] = {story, success, partial, failure}); this script never
+writes texts itself and fails with a clear message when a key is missing.
+
 What is verified for every level (see docs/ENCHANTMENTS.md, "Full result => silhouette 100% filled"):
-  a) a tiling of the silhouette exists that uses ONLY pieces of the required enchantment types, with the max tier per
-     type equal to the required tier (tier 0 = any), pieces drawn from the whole shape catalogue;
-  b) the level's starting items contain such a tiling (exact cover found with the SAME algorithm as the C# LevelValidator),
-     and the intended tiling listed in the data is itself an exact cover;
-  c) the evaluator rules (replica of QuestEvaluator) return Full for that arrangement;
-  d) a distractor-only failure and a partial result that involves a distractor are possible;
-  plus bookkeeping: item counts, distinct tilings across levels, node counts of the search under the C# limit.
+  a) the intended tiling (explicit multiset in the data) is an exact cover of the silhouette, uses ONLY required types with
+     max tier per type == required tier (tier 0 = any), no plain pieces, and is a sub-multiset of the real starting inventory;
+  b) the starting inventory itself contains a Full tiling, found with the SAME algorithm as the C# LevelValidator
+     (depth-first, first empty cell, biggest piece first) well below its node limit, and the QuestEvaluator replica says Full with
+     the silhouette 100% covered;
+  c) from L2 on a single unrequired-type piece gives Failure (and fits); from L3 on a Partial arrangement is packable
+     (L2 has ONE requirement, where Partial cannot exist by the evaluator rules; there a too-low-tier arrangement gives Failure);
+  d) L1: only one enchantment type, no plain, no distractors, everything placed is Full;
+  e) tutorial / content rules: L2 two types with one right, L3 three types with two right, plain filler only from L6, wrong types as
+     in the doc table, distractor counts per level, item cap, shuffled order, distinct tilings, tier I/II/III distribution sanity.
 Pieces are fixed-orientation polyominoes (no rotation). Tier comes from cell count: 1-2 = I, 3 = II, 4+ = III.
 """
 import os
 import sys
+import time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 CS_PATH = os.path.join(ROOT, "Assets", "Scripts", "Editor", "SampleContentData.cs")
+sys.dont_write_bytecode = True
+sys.path.insert(0, HERE)
 
 # Must match LevelValidator.NodeLimit in C#.
 NODE_LIMIT = 400000
-MAX_ITEMS_PER_LEVEL = 24
+# The inventory search of every level must stay far below the C# limit.
+NODE_BUDGET = NODE_LIMIT // 10
+MAX_ITEMS_PER_LEVEL = 30
 
 # Enum order is serialized: append-only (mirrors EnchantmentType).
 ENCH = ["none", "durability", "haste", "sharpness", "efficiency", "luck", "protection"]
 
 # ---------------------------------------------------------------------------------------------- catalogue
-# (id, display name, hex colour, rows) - the 14 plain items that already exist as assets.
+# (id, display name, hex colour, rows) - the 14 plain items that already exist as assets (unchanged).
 PLAIN_ITEMS = [
     ("i4", "I Piece", "#00BCD4", ["####"]),
     ("i4v", "I Piece (upright)", "#0097A7", ["#", "#", "#", "#"]),
@@ -48,113 +59,321 @@ PLAIN_ITEMS = [
     ("i3v", "Bar 3 (upright)", "#5C6BC0", ["#", "#", "#"]),
     ("l3", "Corner", "#EC407A", ["##", "#."]),
 ]
-SHAPES = {pid: rows for (pid, _n, _h, rows) in PLAIN_ITEMS}
 
+# Extra orientations / mirrors needed because pieces cannot be rotated (id = base id + clockwise rotation in degrees).
+# Only the ones that a level actually uses are appended to the generated PlainItems (see emit_csharp), in this order.
+EXTRA_ITEMS = [
+    ("t90", "T Piece (left)", "#8E24AA", [".#", "##", ".#"]),
+    ("t180", "T Piece (up)", "#CE93D8", [".#.", "###"]),
+    ("t270", "T Piece (right)", "#7B1FA2", ["#.", "##", "#."]),
+    ("s90", "S Piece (upright)", "#43A047", ["#.", "##", ".#"]),
+    ("z90", "Z Piece (upright)", "#E53935", [".#", "##", "#."]),
+    ("l90", "L Piece (flat)", "#FB8C00", ["###", "#.."]),
+    ("l180", "L Piece (hook)", "#FFB74D", ["##", ".#", ".#"]),
+    ("l270", "L Piece (roof)", "#F57C00", ["..#", "###"]),
+    ("j90", "J Piece (flat)", "#1E88E5", ["#..", "###"]),
+    ("j180", "J Piece (hook)", "#64B5F6", ["##", "#.", "#."]),
+    ("j270", "J Piece (roof)", "#1976D2", ["###", "..#"]),
+    ("l3_90", "Corner (rot 90)", "#D81B60", ["##", ".#"]),
+    ("l3_180", "Corner (rot 180)", "#F06292", [".#", "##"]),
+    ("l3_270", "Corner (rot 270)", "#C2185B", ["#.", "##"]),
+]
+CATALOGUE = PLAIN_ITEMS + EXTRA_ITEMS
+SHAPES = {pid: rows for (pid, _n, _h, rows) in CATALOGUE}
+CATALOGUE_ORDER = [c[0] for c in CATALOGUE]
+
+# ---------------------------------------------------------------------------------------------- objects
+# (id, name, hex colour, rows). Hole in the millstone is intended. Cell counts are listed in the comments.
 OBJECTS = [
-    ("rocket", "Rocket", "#B0BEC5", [
-        "..#..", ".###.", ".###.", ".###.", ".###.", ".###.", "#####", "#.#.#"]),
-    ("tree", "Tree", "#81C784", [
-        "..###..", ".#####.", "#######", ".#####.", "..###..", "...#...", "...#...", "...#..."]),
-    ("boat", "Boat", "#90CAF9", [
-        "...#.....", "...##....", "...###...", "...####..", "#########", ".#######.", "..#####.."]),
-    ("house", "House", "#FFCC80", [
-        "....#....", "...###...", "..#####..", ".#######.", ".#######.", ".###.###.", ".###.###."]),
-    ("cat", "Cat", "#CE93D8", [
-        "#.....#", "##...##", "#######", "#######", "#######", ".#####.", "..###.."]),
+    ("axe", "Axe", "#B0BEC5", [  # 20
+        "##..#",
+        "#####",
+        "#####",
+        "##..#",
+        "....#",
+        "....#",
+        "....#",
+        "....#"]),
+    ("pickaxe", "Pickaxe", "#90A4AE", [  # 20
+        ".#######.",
+        "##..#..##",
+        "#...#...#",
+        "....#....",
+        "....#....",
+        "....#....",
+        "....#....",
+        "....#...."]),
+    ("pitchfork", "Pitchfork", "#A1887F", [  # 27
+        "#..#..#",
+        "#..#..#",
+        "#..#..#",
+        "#######",
+        ".#####.",
+        "...#...",
+        "...#...",
+        "...#...",
+        "...#...",
+        "...#...",
+        "...#..."]),
+    ("scissors", "Scissors", "#CFD8DC", [  # 31
+        "##...##",
+        ".##.##.",
+        "..###..",
+        ".##.##.",
+        "###.###",
+        "#.#.#.#",
+        "###.###"]),
+    ("hammer", "Hammer", "#8D6E63", [  # 36
+        "########",
+        "########",
+        "########",
+        "...##...",
+        "...##...",
+        "...##...",
+        "...##...",
+        "...##...",
+        "...##..."]),
+    ("shovel", "Shovel", "#78909C", [  # 41
+        "..###..",
+        "..#.#..",
+        "..###..",
+        "...#...",
+        "...#...",
+        "...#...",
+        "..###..",
+        ".#####.",
+        "#######",
+        "#######",
+        ".#####.",
+        "..###.."]),
+    ("plow", "Plow", "#6D4C41", [  # 46
+        "..........##",
+        ".........##.",
+        "........##..",
+        "#########..#",
+        "...##....###",
+        "...###..##..",
+        "..#######...",
+        ".########...",
+        "#####......."]),
+    ("anvil", "Anvil", "#546E7A", [  # 48
+        "###########",
+        ".##########",
+        "...#######.",
+        ".....####..",
+        ".....####..",
+        "....#####..",
+        "...#######."]),
+    ("scythe", "Scythe", "#BCAAA4", [  # 49
+        "........###",
+        ".....######",
+        "....#######",
+        "...########",
+        "..#####...#",
+        "..###.....#",
+        ".####.....#",
+        ".###......#",
+        "........###",
+        "..........#",
+        "..........#",
+        "..........#"]),
+    ("millstone", "Millstone", "#9E9E9E", [  # 60
+        "..#####..",
+        ".#######.",
+        "#########",
+        "###...###",
+        "###...###",
+        "###...###",
+        "#########",
+        ".#######.",
+        "..#####.."]),
 ]
 OBJ = {o[0]: o[3] for o in OBJECTS}
+# silhouette cell range per object from docs/LEVELS.md (target range)
+CELL_RANGE = {"axe": (16, 20), "pickaxe": (20, 24), "pitchfork": (24, 28), "scissors": (28, 32), "hammer": (32, 36),
+              "shovel": (36, 42), "plow": (40, 46), "anvil": (44, 50), "scythe": (48, 54), "millstone": (56, 64)}
+
+# ---------------------------------------------------------------------------------------------- quest table of docs/LEVELS.md
+# The requirement table of the doc, used to report deviations (none at the moment).
+DOC_REQS = {
+    "axe": [("sharpness", 0)],
+    "pickaxe": [("efficiency", 3)],
+    "pitchfork": [("durability", 0), ("sharpness", 2)],
+    "scissors": [("sharpness", 3), ("durability", 0)],
+    "hammer": [("durability", 2), ("efficiency", 0), ("haste", 3)],
+    "shovel": [("efficiency", 3), ("durability", 1), ("luck", 2)],
+    "plow": [("durability", 2), ("efficiency", 3), ("luck", 1), ("protection", 2)],
+    "anvil": [("durability", 3), ("protection", 3), ("sharpness", 2), ("haste", 1)],
+    "scythe": [("sharpness", 3), ("haste", 2), ("luck", 3), ("efficiency", 1)],
+    "millstone": [("durability", 3), ("efficiency", 2), ("protection", 3), ("haste", 1), ("luck", 2)],
+}
+# unrequired ("wrong") enchantment types in each starting inventory, per the doc
+DOC_WRONG = {"axe": [], "pickaxe": ["durability"], "pitchfork": ["haste"], "scissors": ["luck", "haste"],
+             "hammer": ["luck", "protection"], "shovel": ["sharpness"], "plow": ["haste"], "anvil": ["luck"],
+             "scythe": ["durability", "protection"], "millstone": ["sharpness"]}
+# allowed number of distractors per level (1-based), from the doc: L1 none, L2-3 4-6, L4-5 6-8, L6-7 8-10, L8-9 10-12, L10 12-14
+DISTRACTOR_RANGE = {1: (0, 0), 2: (4, 6), 3: (4, 6), 4: (6, 8), 5: (6, 8), 6: (8, 10), 7: (8, 10), 8: (10, 12),
+                    9: (10, 12), 10: (12, 14)}
 
 # ---------------------------------------------------------------------------------------------- levels
-# items: explicit starting inventory (order as shown to the player). Entry "ench:shape" = enchanted, "shape" = plain.
-# tiling: the intended perfect tiling's pieces (a sub-multiset of items); everything else is a distractor.
+# Every level lists:
+#   tiling:      the intended perfect tiling's pieces (the multiset the exact cover must reproduce)
+#   distractors: wrong-type pieces, required-type pieces whose size overshoots the required tier, plain filler (from L6 on)
+#   order:       the shuffled starting inventory shown to the player (exactly tiling + distractors)
+# Entry "ench:shape" = enchanted piece, "shape" = plain piece. Texts are filled in from Tools/level_texts.py.
 LEVELS = [
     {
-        "asset": "Level_01_Rocket", "object": "rocket",
-        "reqs": [("haste", 3), ("durability", 1), ("efficiency", 0)],
-        "story": "Captain Pip here! My rocket rattles like a tin can on every launch, so a little more sturdiness would be nice. "
-                 "But I want it SO fast that I overtake the moon! Oh, and she guzzles fuel, so please do something about that too.",
-        "success": "Whoooosh! I overtook the moon and I still have fuel left!",
-        "partial": "Okay, it flies. Not what I imagined, but fine.",
-        "failure": "It exploded on the launch pad! My eyebrows are gone!",
-        "tiling": ["durability:dominov", "durability:dominov", "efficiency:domino", "efficiency:dot", "efficiency:i4v",
-                   "efficiency:o", "haste:dominov", "haste:i3v", "haste:j"],
-        "distractors": ["durability:i3v", "luck:dominov", "sharpness:o", "protection:t", "t", "l3"],
-        "order": [
-            "efficiency:o", "t", "haste:dominov", "durability:i3v", "efficiency:domino", "haste:j", "luck:dominov",
-            "durability:dominov", "efficiency:i4v", "l3", "haste:i3v", "protection:t", "efficiency:dot",
-            "durability:dominov", "sharpness:o"],
+        "asset": "Level_01_Axe", "object": "axe",
+        "reqs": [("sharpness", 0)],
+        "tiling": ["sharpness:domino", "sharpness:dominov", "sharpness:dot", "sharpness:i3", "sharpness:i4v",
+            "sharpness:j180", "sharpness:l270"],
+        "distractors": [],
+        "order": ["sharpness:j180", "sharpness:dominov", "sharpness:i4v", "sharpness:domino", "sharpness:l270",
+            "sharpness:dot", "sharpness:i3"],
     },
     {
-        "asset": "Level_02_Tree", "object": "tree",
-        "reqs": [("luck", 3), ("protection", 2), ("durability", 0)],
-        "story": "I am the old apple tree by the mill, and the whole village shakes my branches. Lumberjacks keep eyeing my trunk, "
-                 "so I'd like a decent shield against them, nothing crazy. I also dream of golden apples, lots and lots of them! "
-                 "And no more snapping in the wind, please.",
-        "success": "Golden apples everywhere! And the lumberjacks just walked right past me.",
-        "partial": "Hm, I feel a bit different. It will do, I guess.",
-        "failure": "Now my branches are all droopy and the lumberjacks are laughing!",
-        "tiling": ["durability:i3", "durability:s", "durability:t", "luck:domino", "luck:i3v", "luck:z",
-                   "protection:domino", "protection:dot", "protection:i3v"],
-        "distractors": ["protection:i4", "haste:domino", "sharpness:t", "efficiency:l", "o", "dominov"],
-        "order": [
-            "luck:z", "o", "durability:s", "protection:i3v", "efficiency:l", "luck:i3v", "protection:dot", "dominov",
-            "durability:t", "haste:domino", "luck:domino", "protection:i4", "durability:i3", "sharpness:t",
-            "protection:domino"],
+        "asset": "Level_02_Pickaxe", "object": "pickaxe",
+        "reqs": [("efficiency", 3)],
+        "tiling": ["efficiency:domino", "efficiency:dominov", "efficiency:dominov", "efficiency:dot",
+            "efficiency:i3", "efficiency:j180", "efficiency:l3", "efficiency:l3_90"],
+        "distractors": ["durability:dominov", "durability:i3v", "durability:l180", "durability:l90",
+            "durability:l3_180"],
+        "order": ["durability:l180", "efficiency:dominov", "efficiency:j180", "durability:dominov",
+            "efficiency:dominov", "efficiency:l3_90", "durability:l90", "efficiency:i3", "durability:l3_180",
+            "efficiency:dot", "efficiency:domino", "durability:i3v", "efficiency:l3"],
     },
     {
-        "asset": "Level_03_Boat", "object": "boat",
-        "reqs": [("protection", 3), ("haste", 0), ("sharpness", 1)],
-        "story": "This is Soggy Susan, my little fishing boat. She leaks in every storm, so I want her hull as tough as a fortress "
-                 "against the waves! Make her quicker too, I'm not picky how much. And she should nick through the harbor reeds, "
-                 "just barely, nothing scary.",
-        "success": "Not a drop of water inside, and look at her fly! Thank you!",
-        "partial": "She floats. Good enough for the lake.",
-        "failure": "She's sinking and now the fish are laughing at me!",
-        "tiling": ["haste:i3", "haste:i3v", "haste:i4v", "protection:dot", "protection:l", "protection:z",
-                   "protection:z", "protection:i4v", "sharpness:domino", "sharpness:domino"],
-        "distractors": ["sharpness:l3", "sharpness:i4", "durability:o", "luck:dominov", "t", "s"],
-        "order": [
-            "protection:z", "t", "sharpness:domino", "haste:i3", "sharpness:i4", "protection:l", "durability:o",
-            "haste:i4v", "s", "protection:dot", "sharpness:l3", "haste:i3v", "protection:z", "luck:dominov",
-            "sharpness:domino", "protection:i4v"],
+        "asset": "Level_03_Pitchfork", "object": "pitchfork",
+        "reqs": [("durability", 0), ("sharpness", 2)],
+        "tiling": ["durability:i4v", "durability:i4v", "durability:j", "durability:o", "sharpness:domino",
+            "sharpness:dominov", "sharpness:dot", "sharpness:i3v", "sharpness:l3_270"],
+        "distractors": ["haste:l", "haste:l90", "haste:i3", "haste:j270", "sharpness:l", "sharpness:j"],
+        "order": ["haste:i3", "haste:j270", "sharpness:dominov", "sharpness:domino", "durability:i4v", "sharpness:l",
+            "haste:l", "durability:o", "sharpness:l3_270", "haste:l90", "sharpness:j", "durability:i4v",
+            "sharpness:dot", "sharpness:i3v", "durability:j"],
     },
     {
-        "asset": "Level_04_House", "object": "house",
-        "reqs": [("efficiency", 3), ("durability", 2), ("protection", 0)],
-        "story": "My house eats a fortune in firewood every winter, I want it super-duper efficient! "
-                 "The walls creak quite a bit too, so make them reasonably sturdy. And keep the wolves out somehow, I don't care how.",
-        "success": "Warm, solid and wolf-proof! I'm throwing a party!",
-        "partial": "Well, the draft is gone. Mostly. Okay.",
-        "failure": "Now the roof leaks and the firewood bill doubled. Terrific.",
-        "tiling": ["durability:dominov", "durability:dot", "durability:i3", "efficiency:i3v", "efficiency:i3v",
-                   "efficiency:i3v", "efficiency:o", "protection:domino", "protection:i3v", "protection:i3v",
-                   "protection:l", "protection:l"],
-        "distractors": ["durability:o", "haste:i3", "sharpness:dominov", "luck:t", "j", "l3"],
-        "order": [
-            "protection:l", "efficiency:i3v", "j", "durability:i3", "protection:i3v", "haste:i3", "efficiency:o",
-            "protection:domino", "luck:t", "efficiency:i3v", "durability:dominov", "l3", "protection:i3v",
-            "durability:o", "efficiency:i3v", "sharpness:dominov", "durability:dot", "protection:l"],
+        "asset": "Level_04_Scissors", "object": "scissors",
+        "reqs": [("sharpness", 3), ("durability", 0)],
+        "tiling": ["durability:dot", "durability:i3", "durability:i4v", "durability:l3_90", "durability:s",
+            "sharpness:domino", "sharpness:dot", "sharpness:i3v", "sharpness:l3_180", "sharpness:l3_270",
+            "sharpness:z"],
+        "distractors": ["luck:dominov", "haste:domino", "luck:l3", "haste:l270", "luck:z90", "haste:dominov",
+            "luck:i3v"],
+        "order": ["haste:dominov", "luck:l3", "sharpness:dot", "sharpness:l3_180", "durability:i4v", "haste:l270",
+            "haste:domino", "luck:z90", "durability:i3", "sharpness:z", "sharpness:l3_270", "durability:s",
+            "luck:i3v", "sharpness:domino", "sharpness:i3v", "luck:dominov", "durability:l3_90", "durability:dot"],
     },
     {
-        "asset": "Level_05_Cat", "object": "cat",
-        "reqs": [("sharpness", 3), ("haste", 2), ("luck", 0)],
-        "story": "My cat Mittens is a lousy hunter. Her claws are like butter knives, I want them razor sharp! "
-                 "She should also be quite a bit quicker, and, well, a little luck never hurts when chasing mice.",
-        "success": "Mittens caught three mice before breakfast. Purrfect!",
-        "partial": "She caught one mouse. A small one. Fine.",
-        "failure": "She shredded the sofa and then fell off it. Out!",
-        "tiling": ["haste:domino", "haste:dominov", "haste:l3", "luck:dot", "luck:i3v", "luck:l3", "luck:o",
-                   "luck:z", "sharpness:dominov", "sharpness:i3v", "sharpness:o", "sharpness:s"],
-        "distractors": ["haste:i4v", "haste:j", "durability:i3v", "efficiency:domino", "protection:l", "i4"],
-        "order": [
-            "luck:o", "i4", "sharpness:s", "haste:l3", "protection:l", "luck:dot", "sharpness:o", "haste:j",
-            "luck:l3", "haste:domino", "durability:i3v", "sharpness:dominov", "luck:z", "efficiency:domino",
-            "haste:dominov", "sharpness:i3v", "haste:i4v", "luck:i3v"],
+        "asset": "Level_05_Hammer", "object": "hammer",
+        "reqs": [("durability", 2), ("efficiency", 0), ("haste", 3)],
+        "tiling": ["durability:dominov", "durability:dot", "durability:l3_180", "durability:l3_270",
+            "efficiency:domino", "efficiency:dot", "efficiency:l270", "efficiency:l90", "efficiency:t90",
+            "haste:i4v", "haste:j", "haste:l180"],
+        "distractors": ["luck:j90", "protection:l", "luck:o", "protection:t", "luck:l180", "durability:j90",
+            "durability:t270", "durability:t"],
+        "order": ["efficiency:l90", "durability:j90", "durability:t270", "haste:l180", "protection:t", "haste:j",
+            "efficiency:dot", "durability:dot", "luck:o", "durability:t", "luck:j90", "durability:dominov",
+            "haste:i4v", "efficiency:domino", "durability:l3_180", "efficiency:l270", "efficiency:t90", "luck:l180",
+            "protection:l", "durability:l3_270"],
+    },
+    {
+        "asset": "Level_06_Shovel", "object": "shovel",
+        "reqs": [("efficiency", 3), ("durability", 1), ("luck", 2)],
+        "tiling": ["durability:domino", "durability:dominov", "efficiency:dot", "efficiency:i4", "efficiency:l",
+            "efficiency:l180", "efficiency:l270", "efficiency:s90", "efficiency:t180", "luck:i3", "luck:i3",
+            "luck:i3v", "luck:l3_90"],
+        "distractors": ["sharpness:domino", "sharpness:j", "sharpness:l3", "durability:i4", "durability:l3_90",
+            "luck:s", "l3_180", "l3_270", "i4"],
+        "order": ["sharpness:j", "sharpness:l3", "efficiency:l", "sharpness:domino", "durability:dominov",
+            "efficiency:s90", "luck:l3_90", "durability:l3_90", "i4", "efficiency:l270", "l3_180", "luck:i3",
+            "luck:s", "efficiency:l180", "durability:i4", "durability:domino", "efficiency:dot", "luck:i3v",
+            "l3_270", "efficiency:i4", "efficiency:t180", "luck:i3"],
+    },
+    {
+        "asset": "Level_07_Plow", "object": "plow",
+        "reqs": [("durability", 2), ("efficiency", 3), ("luck", 1), ("protection", 2)],
+        "tiling": ["durability:l3", "durability:l3_180", "durability:l3_180", "durability:l3_90", "efficiency:i4",
+            "efficiency:i4", "efficiency:l", "efficiency:t", "efficiency:z90", "luck:domino", "luck:dot",
+            "protection:dominov", "protection:i3", "protection:i3v", "protection:l3_180"],
+        "distractors": ["haste:l90", "haste:t", "haste:dominov", "durability:j270", "luck:z90", "luck:l3",
+            "protection:t180", "z", "i3v", "l3_90"],
+        "order": ["protection:l3_180", "haste:l90", "durability:l3", "durability:j270", "efficiency:t",
+            "efficiency:i4", "durability:l3_90", "luck:l3", "durability:l3_180", "i3v", "luck:dot", "protection:i3v",
+            "haste:t", "efficiency:l", "protection:dominov", "luck:z90", "haste:dominov", "efficiency:z90",
+            "efficiency:i4", "protection:t180", "z", "protection:i3", "luck:domino", "l3_90", "durability:l3_180"],
+    },
+    {
+        "asset": "Level_08_Anvil", "object": "anvil",
+        "reqs": [("durability", 3), ("protection", 3), ("sharpness", 2), ("haste", 1)],
+        "tiling": ["durability:j270", "durability:j90", "durability:l3_90", "durability:s", "durability:t180",
+            "haste:domino", "haste:dominov", "protection:dot", "protection:i4", "protection:l270", "protection:s",
+            "protection:t", "sharpness:domino", "sharpness:i3", "sharpness:l3_270"],
+        "distractors": ["luck:j180", "luck:dominov", "luck:domino", "sharpness:l", "sharpness:j180", "haste:l90",
+            "haste:t270", "t180", "z90", "j180", "dominov"],
+        "order": ["protection:t", "sharpness:j180", "protection:i4", "haste:t270", "protection:l270",
+            "durability:t180", "j180", "z90", "durability:j90", "luck:j180", "luck:dominov", "haste:dominov",
+            "dominov", "haste:domino", "durability:j270", "sharpness:domino", "protection:s", "sharpness:i3", "t180",
+            "sharpness:l3_270", "luck:domino", "durability:s", "haste:l90", "sharpness:l", "durability:l3_90",
+            "protection:dot"],
+    },
+    {
+        "asset": "Level_09_Scythe", "object": "scythe",
+        "reqs": [("sharpness", 3), ("haste", 2), ("luck", 3), ("efficiency", 1)],
+        "tiling": ["efficiency:domino", "efficiency:dominov", "haste:i3", "haste:i3v", "haste:l3", "haste:l3_180",
+            "luck:dot", "luck:i4v", "luck:l", "luck:l3_90", "luck:o", "sharpness:domino", "sharpness:i3",
+            "sharpness:s", "sharpness:t180", "sharpness:t90"],
+        "distractors": ["durability:dominov", "protection:l3", "durability:domino", "protection:l3_180",
+            "durability:domino", "protection:i3", "haste:s", "haste:l180", "efficiency:t270", "efficiency:l3_270",
+            "domino", "t"],
+        "order": ["protection:l3_180", "luck:dot", "durability:domino", "efficiency:dominov", "haste:l3_180",
+            "luck:l", "efficiency:l3_270", "haste:l3", "sharpness:t180", "sharpness:i3", "durability:domino", "t",
+            "efficiency:domino", "protection:l3", "efficiency:t270", "haste:l180", "domino", "luck:l3_90",
+            "protection:i3", "luck:i4v", "haste:i3v", "sharpness:t90", "durability:dominov", "sharpness:s",
+            "sharpness:domino", "haste:s", "haste:i3", "luck:o"],
+    },
+    {
+        "asset": "Level_10_Millstone", "object": "millstone",
+        "reqs": [("durability", 3), ("efficiency", 2), ("protection", 3), ("haste", 1), ("luck", 2)],
+        "tiling": ["durability:dot", "durability:j", "durability:o", "durability:s", "durability:t270",
+            "durability:t90", "efficiency:i3", "efficiency:l3_180", "haste:domino", "haste:dot", "luck:i3",
+            "luck:l3", "protection:i4v", "protection:i4v", "protection:j180", "protection:l90", "protection:t180",
+            "protection:t90"],
+        "distractors": ["sharpness:domino", "sharpness:l180", "sharpness:t90", "efficiency:l180", "efficiency:l",
+            "luck:o", "luck:t180", "haste:l", "haste:z", "l", "s90", "i3"],
+        "order": ["sharpness:l180", "protection:l90", "durability:t270", "i3", "s90", "haste:z", "luck:o",
+            "durability:o", "efficiency:l180", "efficiency:i3", "haste:dot", "luck:i3", "durability:t90", "luck:l3",
+            "sharpness:domino", "durability:j", "durability:dot", "sharpness:t90", "protection:t180", "efficiency:l",
+            "haste:domino", "protection:i4v", "luck:t180", "protection:t90", "durability:s", "protection:i4v", "l",
+            "protection:j180", "efficiency:l3_180", "haste:l"],
     },
 ]
 
-# ---------------------------------------------------------------------------------------------- core rules
+# ---------------------------------------------------------------------------------------------- texts (owned by Tools/level_texts.py)
+TEXT_KEYS = ("story", "success", "partial", "failure")
 
+
+def load_texts():
+    try:
+        from level_texts import TEXTS
+    except Exception as ex:  # ImportError, SyntaxError, ...
+        sys.exit("ERROR: cannot import Tools/level_texts.py (%s: %s). It must define TEXTS = {object_id: {story, success, partial, "
+                 "failure}}." % (type(ex).__name__, ex))
+    missing = []
+    for lvl in LEVELS:
+        oid = lvl["object"]
+        if oid not in TEXTS:
+            missing.append("TEXTS[%r]" % oid)
+            continue
+        for k in TEXT_KEYS:
+            if k not in TEXTS[oid] or not isinstance(TEXTS[oid][k], str):
+                missing.append("TEXTS[%r][%r]" % (oid, k))
+    if missing:
+        sys.exit("ERROR: Tools/level_texts.py is missing text entries: " + ", ".join(missing))
+    return TEXTS
+
+
+# ---------------------------------------------------------------------------------------------- core rules
 
 def cells_of(rows):
     return [(x, y) for y, r in enumerate(rows) for x, c in enumerate(r) if c == "#"]
@@ -189,8 +408,13 @@ def parse_item(entry):
     return None, entry
 
 
+def item_id(piece):
+    e, s = piece
+    return s if e is None else e + "_" + s
+
+
 def evaluate(placed, reqs):
-    """Replica of QuestEvaluator rules. placed: list of (ench or None, shape id)."""
+    """Replica of QuestEvaluator rules. placed: list of (ench or None, shape id). Returns (outcome, score, max_score, wrong)."""
     applied = {}
     for e, s in placed:
         if e is None:
@@ -205,9 +429,11 @@ def evaluate(placed, reqs):
     req_types = set(e for e, _ in reqs)
     wrong = sum(1 for e in applied if e not in req_types)
     max_score = len(reqs)
-    if score == max_score and wrong == 0:
+    if wrong > 0:
+        outcome = "Failure"
+    elif score == max_score:
         outcome = "Full"
-    elif score >= 1 and wrong == 0:
+    elif score >= 1:
         outcome = "Partial"
     else:
         outcome = "Failure"
@@ -215,11 +441,12 @@ def evaluate(placed, reqs):
 
 
 # ---------------------------------------------------------------------------------------------- search
-# Mirrors Assets/Scripts/Editor/LevelValidator.cs: depth-first exact cover, first empty silhouette cell (row-major)
-# gets one of the distinct available pieces (largest first, ties by list order), strict mode = required types only.
+# Search mirrors Assets/Scripts/Editor/LevelValidator.cs: depth-first exact cover, first empty silhouette cell (row-major)
+# gets one of the distinct available pieces (largest first, ties by first occurrence in the inventory), strict mode =
+# required types only and no piece above the required tier.
 
 class Search(object):
-    def __init__(self, silhouette_rows, items, reqs, allow_plain=False, unlimited=False, node_limit=NODE_LIMIT):
+    def __init__(self, silhouette_rows, items, reqs, allow_plain=False, node_limit=NODE_LIMIT):
         self.sil = set(cells_of(silhouette_rows))
         self.order = sorted(self.sil, key=lambda c: (c[1], c[0]))
         self.reqs = reqs
@@ -230,7 +457,6 @@ class Search(object):
         self.node_limit = node_limit
         self.nodes = 0
         self.aborted = False
-        # distinct pieces in first-occurrence order, then stable-sorted by cell count descending
         distinct = []
         counts = {}
         for it in items:
@@ -241,7 +467,7 @@ class Search(object):
         distinct = [d for d in distinct if self._usable(d)]
         distinct.sort(key=lambda d: -len(SHAPE_CELLS[d[1]]))  # python sort is stable
         self.distinct = distinct
-        self.remaining = {d: (10 ** 6 if unlimited else counts[d]) for d in distinct}
+        self.remaining = {d: counts[d] for d in distinct}
         self.occupied = set()
         self.placed = []  # list of ((ench, shape), origin)
 
@@ -257,8 +483,7 @@ class Search(object):
         return True
 
     def run(self):
-        found = self._rec(len(self.sil))
-        return found
+        return self._rec(len(self.sil))
 
     def _rec(self, empty_left):
         self.nodes += 1
@@ -266,8 +491,7 @@ class Search(object):
             self.aborted = True
             return False
         if empty_left == 0:
-            outcome = evaluate([p for p, _ in self.placed], self.reqs)[0]
-            return outcome == "Full"
+            return evaluate([p for p, _ in self.placed], self.reqs)[0] == "Full"
         first = None
         for c in self.order:
             if c not in self.occupied:
@@ -277,14 +501,11 @@ class Search(object):
             if self.remaining[d] <= 0:
                 continue
             cs = SHAPE_CELLS[d[1]]
+            if len(cs) > empty_left:
+                continue
             ox, oy = first[0] - cs[0][0], first[1] - cs[0][1]
             absolute = [(ox + x, oy + y) for x, y in cs]
-            ok = True
-            for p in absolute:
-                if p not in self.sil or p in self.occupied:
-                    ok = False
-                    break
-            if not ok:
+            if any(p not in self.sil or p in self.occupied for p in absolute):
                 continue
             self.remaining[d] -= 1
             self.occupied.update(absolute)
@@ -297,6 +518,63 @@ class Search(object):
             if self.aborted:
                 return False
         return False
+
+
+def exact_cover(silhouette_rows, shape_ids, node_limit=200000):
+    """Independent exact cover of the silhouette by the multiset shape_ids (most-constrained cell first).
+    Returns (list of (shape, origin) or None, nodes, aborted)."""
+    sil = set(cells_of(silhouette_rows))
+    remaining = {}
+    for s in shape_ids:
+        remaining[s] = remaining.get(s, 0) + 1
+    # every placement (shape, origin, absolute cells) that lies inside the silhouette
+    placements = []
+    for s in remaining:
+        cs = SHAPE_CELLS[s]
+        for (ax, ay) in sil:
+            ox, oy = ax - cs[0][0], ay - cs[0][1]
+            absolute = [(ox + x, oy + y) for x, y in cs]
+            if all(p in sil for p in absolute):
+                placements.append((s, (ox, oy), frozenset(absolute)))
+    by_cell = {c: [] for c in sil}
+    for pl in placements:
+        for c in pl[2]:
+            by_cell[c].append(pl)
+    state = {"nodes": 0, "aborted": False}
+    occ = set()
+    chosen = []
+
+    def rec():
+        state["nodes"] += 1
+        if state["nodes"] > node_limit:
+            state["aborted"] = True
+            return False
+        if len(occ) == len(sil):
+            return True
+        best = None
+        for c in sil:
+            if c in occ:
+                continue
+            opts = [p for p in by_cell[c] if remaining[p[0]] > 0 and not (p[2] & occ)]
+            if best is None or len(opts) < len(best):
+                best = opts
+                if len(opts) <= 1:
+                    break
+        for p in best:
+            remaining[p[0]] -= 1
+            occ.update(p[2])
+            chosen.append((p[0], p[1]))
+            if rec():
+                return True
+            chosen.pop()
+            occ.difference_update(p[2])
+            remaining[p[0]] += 1
+            if state["aborted"]:
+                return False
+        return False
+
+    ok = rec()
+    return (list(chosen) if ok else None), state["nodes"], state["aborted"]
 
 
 def can_pack(silhouette_rows, pieces):
@@ -332,116 +610,273 @@ def multiset(entries):
     return d
 
 
+def is_connected(cells):
+    cells = set(cells)
+    if not cells:
+        return False
+    stack = [next(iter(cells))]
+    seen = set(stack)
+    while stack:
+        x, y = stack.pop()
+        for n in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
+            if n in cells and n not in seen:
+                seen.add(n)
+                stack.append(n)
+    return len(seen) == len(cells)
+
+
+def tier_name(t):
+    return "any" if t == 0 else "I" * t if t < 3 else "III"
+
+
+def max_run(seq):
+    best = run = 0
+    prev = object()
+    for x in seq:
+        run = run + 1 if x == prev else 1
+        prev = x
+        best = max(best, run)
+    return best
+
+
 def verify():
     errors = []
+    warnings = []
 
     def check(cond, msg):
         if not cond:
             errors.append(msg)
         return cond
 
+    texts = load_texts()
+
+    # ---- catalogue
+    ids = [c[0] for c in CATALOGUE]
+    check(len(set(ids)) == len(ids), "catalogue: duplicate shape ids")
+    seen_shapes = {}
+    for pid, name, hexc, rows in CATALOGUE:
+        check(all(ch in "abcdefghijklmnopqrstuvwxyz0123456789_" for ch in pid) and pid, "catalogue: bad id " + pid)
+        check(len(hexc) == 7 and hexc[0] == "#", "catalogue: bad colour of " + pid)
+        check(is_connected(cells_of(rows)), "catalogue: shape not connected: " + pid)
+        key = tuple(SHAPE_CELLS[pid])
+        check(key not in seen_shapes, "catalogue: %s duplicates the shape of %s" % (pid, seen_shapes.get(key)))
+        seen_shapes[key] = pid
+    check(ids[:14] == ["i4", "i4v", "o", "t", "s", "z", "l", "j", "dot", "domino", "dominov", "i3", "i3v", "l3"],
+          "catalogue: the 14 existing plain items must stay first and unchanged")
+
+    # ---- objects
+    obj_ids = [o[0] for o in OBJECTS]
+    check(obj_ids == ["axe", "pickaxe", "pitchfork", "scissors", "hammer", "shovel", "plow", "anvil", "scythe", "millstone"],
+          "objects: expected the ten objects of docs/LEVELS.md in order")
+    for oid, name, hexc, rows in OBJECTS:
+        n = len(cells_of(rows))
+        lo, hi = CELL_RANGE[oid]
+        check(lo <= n <= hi, "object %s: %d cells outside the doc range %d-%d" % (oid, n, lo, hi))
+        check(len(rows) <= 12 and max(len(r) for r in rows) <= 12, "object %s: larger than 12x12" % oid)
+        check(len(set(len(r) for r in rows)) == 1, "object %s: ragged rows" % oid)
+        check(is_connected(cells_of(rows)), "object %s: silhouette is not one connected piece" % oid)
+        check(all(set(r) <= set("#.") for r in rows), "object %s: bad characters" % oid)
+    check(len(set(tuple(o[3]) for o in OBJECTS)) == len(OBJECTS), "objects: duplicate silhouettes")
+    check([l["object"] for l in LEVELS] == obj_ids, "levels must follow the object order")
+    check([l["asset"] for l in LEVELS] == ["Level_%02d_%s" % (i + 1, o.capitalize()) for i, o in enumerate(obj_ids)],
+          "level asset names must be Level_01_Axe ... Level_10_Millstone")
+
     signatures = {}
-    all_item_ids = set()
-    for lvl in LEVELS:
+    all_tier_use = set()
+    t_start = time.time()
+    for li, lvl in enumerate(LEVELS):
+        num = li + 1
         name = lvl["asset"]
-        sil = OBJ[lvl["object"]]
+        oid = lvl["object"]
+        sil = OBJ[oid]
+        sil_cells = len(cells_of(sil))
         reqs = lvl["reqs"]
         tiling = [parse_item(e) for e in lvl["tiling"]]
         distractors = [parse_item(e) for e in lvl["distractors"]]
         items = [parse_item(e) for e in lvl["order"]]
-        req_types = set(e for e, _ in reqs)
+        req_tier = dict(reqs)
+        req_types = set(req_tier)
         print("--- %s (%s, %d cells) requirements: %s" % (
-            name, lvl["object"], len(cells_of(sil)),
-            ", ".join("%s %s" % (e, "any" if t == 0 else "I" * t if t < 3 else "III") for e, t in reqs)))
+            name, oid, sil_cells, ", ".join("%s %s" % (e, tier_name(t)) for e, t in reqs)))
 
-        # bookkeeping
-        check(2 <= len(reqs) <= 3, name + ": 2-3 requirements expected")
+        # doc table deviations (informational)
+        if reqs != DOC_REQS[oid]:
+            print("  DEVIATION from docs/LEVELS.md requirement table: doc %s" % (DOC_REQS[oid],))
+
+        # texts
+        for k in TEXT_KEYS:
+            lvl[k] = texts[oid][k]
+
+        # ---- bookkeeping
         check(len(set(e for e, _ in reqs)) == len(reqs), name + ": duplicate required types")
-        check(4 <= len(distractors) <= 8, name + ": 4-8 distractors expected, got %d" % len(distractors))
+        check(1 <= len(reqs) <= 5 and all(e in ENCH[1:] for e in req_types), name + ": bad requirement list")
+        check(all(0 <= t <= 3 for _, t in reqs), name + ": bad tier")
         check(len(items) <= MAX_ITEMS_PER_LEVEL, name + ": too many items (%d)" % len(items))
         check(multiset(lvl["order"]) == multiset(lvl["tiling"] + lvl["distractors"]),
               name + ": order must be exactly tiling + distractors")
-        check(any(t == 0 for _, t in reqs) and any(t > 0 for _, t in reqs), name + ": mix tier-0 and tier-specific")
+        lo, hi = DISTRACTOR_RANGE[num]
+        check(lo <= len(distractors) <= hi, "%s: %d distractors, expected %d-%d" % (name, len(distractors), lo, hi))
         for e, s in tiling:
             check(e in req_types, name + ": tiling piece of unrequired type %s:%s" % (e, s))
-        check(sum(len(SHAPE_CELLS[s]) for _, s in tiling) == len(cells_of(sil)), name + ": tiling cell count != silhouette")
-        for e, s in items:
-            all_item_ids.add(s if e is None else e + "_" + s)
+        check(sum(len(SHAPE_CELLS[s]) for _, s in tiling) == sil_cells, name + ": tiling cell count != silhouette")
+        check(all(e is not None for e, _ in tiling), name + ": plain piece in the tiling")
 
-        # a) exists with unlimited supply of every shape and every required type
-        catalogue = [(e, sh) for (e, _t) in reqs for (sh, _n, _h, _r) in PLAIN_ITEMS]
-        sa = Search(sil, catalogue, reqs, unlimited=True, node_limit=2000000)
-        found_a = sa.run()
-        check(found_a or sa.aborted, name + ": (a) no required-only tiling exists even with unlimited pieces")
-        print("  a) unlimited-supply tiling exists: %s (nodes %d%s; the intended tiling in b) proves it anyway)" % (
-            found_a, sa.nodes, ", search aborted" if sa.aborted else ""))
+        # types in the inventory vs the doc table
+        inv_types = set(e for e, _ in items if e is not None)
+        wrong_types = inv_types - req_types
+        check(req_types <= inv_types, name + ": a required type is missing from the inventory")
+        check(wrong_types == set(DOC_WRONG[oid]), "%s: wrong types %s, doc says %s" % (name, sorted(wrong_types), DOC_WRONG[oid]))
+        plain_count = sum(1 for e, _ in items if e is None)
+        if num <= 5:
+            check(plain_count == 0, name + ": no plain pieces allowed before L6")
+        else:
+            check(plain_count >= 1, name + ": plain filler expected from L6 on")
+        # tutorial rules
+        if num == 1:
+            check(inv_types == {"sharpness"} and len(reqs) == 1 and plain_count == 0 and not distractors,
+                  "L1 must contain ONLY sharpness pieces, no plain, no distractors")
+        if num == 2:
+            check(len(inv_types) == 2 and len(req_types) == 1, "L2: 2 types in the inventory with 1 right")
+            check(reqs[0][1] == 3, "L2: pickaxe needs a tier III piece")
+        if num == 3:
+            check(len(inv_types) == 3 and len(req_types) == 2, "L3: 3 types in the inventory with 2 right")
+            check(any(e == "sharpness" and len(SHAPE_CELLS[s]) == 4 for e, s in distractors),
+                  "L3: at least one 4-cell sharpness piece (overshoots tier II)")
+        # overshoot decoys: a piece of a required type above the required tier (impossible for tier III / any)
+        overshoot = [d for d in distractors if d[0] in req_tier and req_tier[d[0]] > 0
+                     and tier_of(len(SHAPE_CELLS[d[1]])) > req_tier[d[0]]]
+        possible = any(0 < t < 3 for _, t in reqs)
+        other = [d for d in distractors if d[0] is not None and d[0] in req_tier and d not in overshoot]
+        check(not other, name + ": required-type distractors must overshoot the required tier (else they could be usable)")
+        if num >= 3 and possible:
+            check(len(overshoot) >= 1, name + ": expected wrong-tier decoys")
+        # shuffled order, not grouped by type
+        kinds = [e or "plain" for e, _ in items]
+        if len(set(kinds)) > 1:
+            check(max_run(kinds) <= 2, name + ": order is grouped by type (run of %d)" % max_run(kinds))
+        check(len(items) < 3 or lvl["order"] != sorted(lvl["order"]), name + ": order looks sorted")
 
-        # b1) the intended tiling is an exact cover using exactly those pieces
-        s1 = Search(sil, tiling, reqs)
-        s1.remaining = dict(multiset(tiling))
-        s1.distinct = [d for d in s1.distinct if d in s1.remaining]
-        ok1 = s1.run()
-        check(ok1, name + ": (b) intended tiling does not tile the silhouette / is not Full")
-        check(ok1 and len(s1.placed) == len(tiling), name + ": intended tiling should use every listed piece")
+        # ---- tier sanity of the intended tiling
+        sizes_by_type = {}
+        for e, s in tiling:
+            sizes_by_type.setdefault(e, []).append(len(SHAPE_CELLS[s]))
+        for e, t in reqs:
+            sz = sizes_by_type.get(e, [])
+            check(len(sz) >= 1, "%s: tiling has no %s piece" % (name, e))
+            if not sz:
+                continue
+            if num >= 2 and len(tiling) >= 4 * len(reqs):
+                check(len(sz) >= 2, "%s: tiling uses only one %s piece" % (name, e))
+            if t == 1:
+                check(max(sz) <= 2, "%s: %s tier I but piece with %d cells" % (name, e, max(sz)))
+            elif t == 2:
+                check(max(sz) == 3, "%s: %s tier II needs max piece 3 cells, got %d" % (name, e, max(sz)))
+            elif t == 3:
+                check(max(sz) >= 4, "%s: %s tier III needs a 4+ cell piece" % (name, e))
+            all_tier_use.add(t)
+        shapes_used = set(s for _, s in tiling)
+        check(len(shapes_used) >= max(4, len(tiling) // 3), "%s: tiling uses too few different shapes" % name)
+        print("  tiling: %d pieces (cells x count: %s), %d different shapes" % (
+            len(tiling), ", ".join("%dx%d" % (k, v) for k, v in sorted(multiset([len(SHAPE_CELLS[s]) for _, s in tiling]).items())),
+            len(shapes_used)))
 
-        # b) the actual starting inventory (tiling + distractors), same algorithm as C#
+        # ---- a) the intended tiling is an exact cover, sub-multiset of the inventory
+        inv_ms = multiset(lvl["order"])
+        til_ms = multiset(lvl["tiling"])
+        check(all(inv_ms.get(k, 0) >= v for k, v in til_ms.items()), name + ": (a) tiling is not a sub-multiset of the inventory")
+        cover, nodes_a, aborted_a = exact_cover(sil, [s for _, s in tiling])
+        check(cover is not None, name + ": (a) intended tiling does not tile the silhouette%s" % (" (search aborted)" if aborted_a else ""))
+        print("  a) intended tiling is an exact cover: %s (%d nodes)" % (cover is not None, nodes_a))
+
+        # ---- b) the real starting inventory, same algorithm as the C# validator
         sb = Search(sil, items, reqs)
         okb = sb.run()
         check(okb, name + ": (b) starting items contain no Full tiling")
-        check(not sb.aborted, name + ": (b) search hit node limit")
-        check(sb.nodes < NODE_LIMIT // 2, name + ": (b) search needs %d nodes, too close to the C# limit" % sb.nodes)
-        print("  b) starting items contain a Full tiling: %s (nodes %d, limit %d)" % (okb, sb.nodes, NODE_LIMIT))
-
+        check(not sb.aborted, name + ": (b) search hit the node limit")
+        check(sb.nodes <= NODE_BUDGET, "%s: (b) search needs %d nodes, budget %d (C# limit %d)" % (name, sb.nodes, NODE_BUDGET, NODE_LIMIT))
+        print("  b) inventory (%d items = %d tiling + %d distractors) contains a Full tiling: %s (%d nodes, C# limit %d)" % (
+            len(items), len(tiling), len(distractors), okb, sb.nodes, NODE_LIMIT))
         if okb:
             placed_items = [p for p, _ in sb.placed]
-            # c) the evaluator says Full and the silhouette is completely covered
             outcome, score, max_score, wrong = evaluate(placed_items, reqs)
-            check(outcome == "Full" and score == max_score and wrong == 0, name + ": (c) found tiling is not Full")
-            check(len(sb.occupied) == len(sb.sil), name + ": (c) silhouette not 100% filled")
-            check(all(p[0] is not None for p in placed_items), name + ": (c) plain piece in strict tiling")
-            print("  c) evaluator: %s score %d/%d wrong %d, filled %d/%d cells, %d pieces" % (
+            check(outcome == "Full" and score == max_score and wrong == 0, name + ": (b) found tiling is not Full")
+            check(len(sb.occupied) == len(sb.sil), name + ": (b) silhouette not 100% filled")
+            check(all(p[0] is not None for p in placed_items), name + ": (b) plain piece in the strict tiling")
+            used_ms = multiset([item_id(p) for p in placed_items])
+            have_ms = multiset([item_id(p) for p in items])
+            check(all(have_ms.get(k, 0) >= v for k, v in used_ms.items()), name + ": (b) tiling uses pieces the inventory lacks")
+            print("     evaluator: %s %d/%d wrong %d; silhouette %d/%d filled with %d pieces" % (
                 outcome, score, max_score, wrong, len(sb.occupied), len(sb.sil), len(placed_items)))
             sig = tuple(sorted((p[0], p[1], o) for p, o in sb.placed))
             check(sig not in signatures.values(), name + ": identical tiling to another level")
             signatures[name] = sig
 
-        # d) a distractor-only failure, a partial arrangement involving a distractor
-        wrong_types = [d for d in distractors if d[0] is not None and d[0] not in req_types]
-        failure_ok = False
-        for d in wrong_types:
-            if can_pack(sil, [d]) and evaluate([d], reqs)[0] == "Failure":
-                failure_ok = True
-                break
-        check(failure_ok, name + ": (d) no distractor-only failure arrangement")
-        overshoot = [d for d in distractors if d[0] in req_types and evaluate([d], reqs)[1] == 0]
-        check(len(overshoot) >= 1, name + ": (d) no required-type-at-wrong-tier distractor")
-        partial_ok = False
-        partial_desc = ""
-        for o in overshoot:
-            for t in tiling:
-                if t[0] != o[0] and can_pack(sil, [o, t]):
-                    r = evaluate([o, t], reqs)
-                    if r[0] == "Partial":
-                        partial_ok = True
-                        partial_desc = "%s:%s + %s:%s" % (o[0], o[1], t[0], t[1])
+        # ---- c) failure / partial arrangements
+        if num >= 2:
+            wrong_pieces = [d for d in distractors if d[0] is not None and d[0] not in req_types]
+            check(len(wrong_pieces) >= 1, name + ": (c) no unrequired-type distractor")
+            for d in wrong_pieces:
+                check(can_pack(sil, [d]) and evaluate([d], reqs)[0] == "Failure", "%s: (c) %s does not give Failure" % (name, item_id(d)))
+                check(evaluate([d, tiling[0]], reqs)[0] == "Failure", "%s: (c) %s + a right piece must be Failure" % (name, item_id(d)))
+            print("  c) a single unrequired piece (%d kinds) gives Failure" % len(set(wrong_pieces)))
+        if num >= 3:
+            partial_single = [t for t in tiling if evaluate([t], reqs)[0] == "Partial" and can_pack(sil, [t])]
+            check(partial_single, name + ": (c) no single right piece gives Partial")
+            desc = ""
+            for o in overshoot:
+                for t in tiling:
+                    if t[0] != o[0] and can_pack(sil, [o, t]) and evaluate([o, t], reqs)[0] == "Partial":
+                        desc = "%s + %s" % (item_id(o), item_id(t))
                         break
-            if partial_ok:
-                break
-        check(partial_ok, name + ": (d) no partial arrangement with a distractor")
-        # a distractor-free partial too (one right piece alone)
-        right_alone = any(evaluate([t], reqs)[0] == "Partial" for t in tiling)
-        check(right_alone, name + ": (d) single right piece should give Partial")
-        print("  d) failure via unrequired piece: %s; partial via %s; wrong-tier distractors: %s" % (
-            failure_ok, partial_desc or "-", ", ".join("%s:%s" % o for o in overshoot)))
-        print("     items %d = tiling %d + distractors %d" % (len(items), len(tiling), len(distractors)))
+                if desc:
+                    break
+            if overshoot:
+                check(desc, name + ": (c) no Partial arrangement involving a wrong-tier decoy")
+            # a type placed at the wrong tier gives no point and no failure
+            print("  c) Partial packable: single %s%s" % (item_id(partial_single[0]) if partial_single else "-",
+                                                         "; with decoy " + desc if desc else ""))
+        if num == 2:
+            low = [t for t in tiling if len(SHAPE_CELLS[t[1]]) < 4]
+            check(evaluate(low, reqs)[0] == "Failure", name + ": (c) pieces below tier III must give Failure")
+            check(len(low) < len(tiling), name + ": (c) tiling needs a 4+ cell piece")
+            print("  c) single requirement: Partial cannot exist (evaluator rules); sub-tier arrangement gives Failure")
 
-    return errors, all_item_ids
+        # ---- d) level 1
+        if num == 1:
+            allp = list(items)
+            check(evaluate(allp, reqs)[0] == "Full", "L1: all pieces placed must be Full")
+            check(all(evaluate([p], reqs)[0] == "Full" for p in items), "L1: every single piece must already be Full")
+            check(all(evaluate(list(sub), reqs)[0] == "Full" for sub in (items[:3], items[2:], items[::2])), "L1: any arrangement is Full")
+            print("  d) L1: only sharpness, any arrangement is Full")
+
+    # ---- campaign level checks
+    check({1, 2, 3} <= all_tier_use, "campaign should use tier I, II and III requirements")
+    check(len(signatures) == len(LEVELS), "not every level produced a tiling")
+    print("\nverification took %.1f s" % (time.time() - t_start))
+    return errors, warnings
 
 
 # ---------------------------------------------------------------------------------------------- C# emission
 
 def cs_str(s):
-    return '"' + s.replace("\\", "\\\\").replace('"', '\\"') + '"'
+    out = ['"']
+    for ch in s:
+        if ch == "\\":
+            out.append("\\\\")
+        elif ch == '"':
+            out.append('\\"')
+        elif ch == "\n":
+            out.append("\\n")
+        elif ch == "\r":
+            out.append("\\r")
+        elif ch == "\t":
+            out.append("\\t")
+        elif ord(ch) < 0x20:
+            out.append("\\u%04x" % ord(ch))
+        else:
+            out.append(ch)
+    out.append('"')
+    return "".join(out)
 
 
 def cs_rows(rows):
@@ -454,13 +889,15 @@ def cs_type(e):
 
 def emit_csharp():
     used = set()
+    used_shapes = set()
     for lvl in LEVELS:
         for entry in lvl["order"]:
             e, s = parse_item(entry)
+            used_shapes.add(s)
             if e is not None:
                 used.add((e, s))
-    shape_order = [p[0] for p in PLAIN_ITEMS]
-    enchanted = sorted(used, key=lambda es: (ENCH.index(es[0]), shape_order.index(es[1])))
+    plain = list(PLAIN_ITEMS) + [x for x in EXTRA_ITEMS if x[0] in used_shapes]
+    enchanted = sorted(used, key=lambda es: (ENCH.index(es[0]), CATALOGUE_ORDER.index(es[1])))
 
     out = []
     w = out.append
@@ -476,7 +913,7 @@ def emit_csharp():
     w("    {")
     w("        internal static readonly ItemDef[] PlainItems =")
     w("        {")
-    for pid, name, hexc, rows in PLAIN_ITEMS:
+    for pid, name, hexc, rows in plain:
         w("            new ItemDef(%s, %s, %s, %s)," % (cs_str(pid), cs_str(name), cs_str(hexc), cs_rows(rows)))
     w("        };")
     w("")
@@ -509,7 +946,7 @@ def emit_csharp():
         w("                {")
         for entry in lvl["order"]:
             e, s = parse_item(entry)
-            w("                    %s," % cs_str(s if e is None else e + "_" + s))
+            w("                    %s," % cs_str(item_id((e, s))))
         w("                },")
         w("                %s," % cs_str(lvl["success"]))
         w("                %s," % cs_str(lvl["partial"]))
@@ -522,18 +959,18 @@ def emit_csharp():
 
 def main():
     emit = "--emit" in sys.argv
-    errors, _ids = verify()
+    errors, _warnings = verify()
     text = emit_csharp()
     if emit:
         if errors:
             print("\nNOT emitting: verification failed")
         else:
-            with open(CS_PATH, "w", newline="\n") as f:
+            with open(CS_PATH, "w", newline="\n", encoding="utf-8") as f:
                 f.write(text)
             print("\nwrote " + os.path.relpath(CS_PATH, ROOT))
     else:
         if os.path.exists(CS_PATH):
-            with open(CS_PATH, newline="") as f:
+            with open(CS_PATH, newline="", encoding="utf-8") as f:
                 current = f.read()
             if current != text:
                 errors.append("SampleContentData.cs is out of sync with this script (run with --emit)")
