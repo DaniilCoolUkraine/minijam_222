@@ -65,9 +65,9 @@ Full spec: [`docs/LEVELS.md`](docs/LEVELS.md). Each level is a different object 
 
 | # | Object | Requirements (type : tier, 0 = any) | Notes |
 |---|---|---|---|
-| 1 | Axe | sharpness | tutorial: only sharpness pieces exist, any arrangement is a Full result |
-| 2 | Pickaxe | efficiency III | tutorial: one right type, one wrong type; tiers start here |
-| 3 | Pitchfork | durability, sharpness II | tutorial: two right, one wrong |
+| 1 | Axe | durability | tutorial: the silhouette is just the handle, the inventory is one stick (1 entry) |
+| 2 | Pickaxe | efficiency III, durability I | tutorial: head + handle, 3 entries = 2 right + 1 wrong type; tiers start here |
+| 3 | Pitchfork | durability II, sharpness II | tutorial: 5 entries = 3 right + 2 wrong (one wrong type, one right type at the wrong tier) |
 | 4 | Scissors | sharpness III, durability | |
 | 5 | Hammer | durability II, efficiency, haste III | |
 | 6 | Shovel | efficiency III, durability I, luck II | plain filler pieces start here |
@@ -76,7 +76,8 @@ Full spec: [`docs/LEVELS.md`](docs/LEVELS.md). Each level is a different object 
 | 9 | Scythe | sharpness III, haste II, luck III, efficiency I | |
 | 10 | Millstone | durability III, efficiency II, protection III, haste I, luck II | finale, 60 cells with a hole |
 
-Every level has a guaranteed Full tiling among its starting pieces (checked by an exact-cover solver). The tiling is the hint: the
+Levels 1-3 are tutorials: their silhouette is only the part of the tool being enchanted (the object sprite is drawn to that
+silhouette, the full tools start at level 4). Every level has a guaranteed Full tiling among its starting pieces (checked by an exact-cover solver). The tiling is the hint: the
 filled silhouette shows which pieces to use, the story hints at the enchantments.
 
 Where things live:

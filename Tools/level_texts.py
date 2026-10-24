@@ -4,25 +4,26 @@
 # efficiency = less effort/more done per swing; luck = lucky/finds treasure/fortune; protection = safe/guards/shield from harm.
 # Tiers: I = a tiny bit/just slightly; II = decently/properly/quite; III = the best/as much as possible/legendary; any = plain mention.
 TEXTS = {
-    # 1. Wren the woodcutter: sharpness (any)
+    # 1. Wren the woodcutter: durability (any) - handle only
     "axe": {
-        "story": "Hi, I'm Wren the woodcutter. My axe has gone dull and barely cuts. Please make it sharp again!",
-        "success": "Chop chop! Now that is a sharp axe. Thank you!",
-        "partial": "Okay, it cuts. That should do the work.",
-        "failure": "No, now my axe is worse than a spoon!",
+        "story": "Hi, I'm Wren the woodcutter. My axe handle snaps like a dry twig whenever I swing it. "
+                 "Please give me a handle that lasts!",
+        "success": "Chop chop! This handle will never snap. Thank you!",
+        "partial": "Okay, it holds. That should do the work.",
+        "failure": "Hey, my handle is still bare! I can't chop with my bare hands!",
     },
-    # 2. Dora the miner: efficiency III
+    # 2. Dora the miner: efficiency III (head), durability I (handle)
     "pickaxe": {
-        "story": "Dora the miner here, and my arms are noodles. I want to get as much done with every single swing as possible, "
-                 "the best there is! One swing, one tunnel, and then a nap.",
+        "story": "Dora the miner here, and my arms are noodles. The head must get as much done with every single swing "
+                 "as possible, the best there is! The handle only needs to be just slightly sturdy.",
         "success": "Yay, now I can dig all the way to the mouse caves!",
         "partial": "Okay, the tunnel got a bit longer. That should do the work.",
         "failure": "No, now it's even worse! My arms hurt twice as much!",
     },
-    # 3. Farmer Hank: durability (any), sharpness II
+    # 3. Farmer Hank: durability II (handle), sharpness II (prongs)
     "pitchfork": {
-        "story": "Bah, Farmer Hank here. This pitchfork snaps every time I toss a hay bale, so it needs to last. "
-                 "And the prongs should be properly sharp, not just poke around like a toothpick.",
+        "story": "Bah, Farmer Hank here. The handle snaps every time I toss a hay bale, so make it properly sturdy. "
+                 "The prongs should be decently sharp, but nothing crazy, I only stab hay.",
         "success": "Well, I'll be! Hay flies like butter and nothing snaps! Best fork ever!",
         "partial": "Hmph. It's a fork. It forks. Fine.",
         "failure": "Useless! I've met turnips with more sense than this fork!",

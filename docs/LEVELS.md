@@ -1,5 +1,6 @@
 # 10-level campaign - design spec (shared by all agents)
 
+Levels 1-3 are tutorials with partial-tool silhouettes (only the part being enchanted); levels 4-10 use the full tools.
 Replaces the five old sample levels (rocket, tree, boat, house, cat). Rules of the game are in `docs/ENCHANTMENTS.md`
 (tier from item size: 1-2 cells = I, 3 = II, 4+ = III; max tier per type counts; Full / Partial / Failure; every outcome advances).
 Pieces cannot be rotated: every orientation a level needs must exist as its own piece shape.
@@ -7,9 +8,9 @@ Pieces cannot be rotated: every orientation a level needs must exist as its own 
 ## The ten objects (village tools, smallest first, millstone last)
 | # | object id | name | colour hint | silhouette cells | what it is |
 |---|---|---|---|---|---|
-| 1 | axe | Axe | #B0BEC5 | 16-20 | blade head on a straight handle |
-| 2 | pickaxe | Pickaxe | #90A4AE | 20-24 | curved double-pointed head on a handle |
-| 3 | pitchfork | Pitchfork | #A1887F | 24-28 | "huge fork": 3-4 prongs, crossbar, long handle |
+| 1 | axe | Axe | #B0BEC5 | 4 | tutorial: the HANDLE only (1x4 stick) |
+| 2 | pickaxe | Pickaxe | #90A4AE | 6 | tutorial: T-shaped head + handle |
+| 3 | pitchfork | Pitchfork | #A1887F | 8 | tutorial: two prongs, crossbar, handle |
 | 4 | scissors | Scissors | #CFD8DC | 28-32 | two blades and two loops |
 | 5 | hammer | Hammer | #8D6E63 | 32-36 | heavy head on a handle |
 | 6 | shovel | Shovel | #78909C | 36-42 | spade blade, long shaft, D-grip |
@@ -26,9 +27,9 @@ Types: durability, haste, sharpness, efficiency, luck, protection.
 
 | # | object | requirements | types present in the starting inventory | extras in the inventory |
 |---|---|---|---|---|
-| 1 | axe | sharpness:0 | sharpness ONLY | none. No plain pieces, no other types. Any arrangement is a Full result (tutorial: "just put pieces in") |
-| 2 | pickaxe | efficiency:3 | efficiency (right) + durability (wrong) | tiers start here: needs a 4+ cell efficiency piece; smaller efficiency pieces are fine; no plain pieces |
-| 3 | pitchfork | durability:0, sharpness:2 | durability + sharpness (right), haste (wrong) | wrong-tier pieces start here: at least one 4-cell sharpness piece (overshoots tier II); no plain pieces |
+| 1 | axe | durability:0 | 1 inventory entry: durability i4v (the stick) | tutorial. Nothing else. Placing it = Full, placing nothing = Failure |
+| 2 | pickaxe | efficiency:3, durability:1 | 3 entries: efficiency T (head, 4 cells) + durability domino (handle, 2 cells), plus 1 wrong: haste domino | tutorial. Tiers start here; Partial = only one of the two right pieces |
+| 3 | pitchfork | durability:2, sharpness:2 | 5 entries: durability bar-3 (handle), sharpness corner (3 cells) + sharpness domino (prongs), plus 2 wrong: haste domino and sharpness 4-bar | tutorial. The 4-bar is the right type at the wrong tier (III instead of II) |
 | 4 | scissors | sharpness:3, durability:0 | sharpness + durability (right), luck + haste (wrong) | 1-2 wrong-tier decoys; no plain pieces |
 | 5 | hammer | durability:2, efficiency:0, haste:3 | the three right ones, luck + protection (wrong) | wrong-tier decoys; no plain pieces |
 | 6 | shovel | efficiency:3, durability:1, luck:2 | the three right ones + sharpness (wrong) | wrong-tier decoys, plain filler pieces start here |
@@ -45,7 +46,7 @@ Remember: tier I of a type means every placed piece of that type has at most 2 c
 - The Full tiling must exist among the starting items: pieces of REQUIRED types only, no plain pieces, max tier per type == required tier
   (tier 0: any), together covering the silhouette EXACTLY (100% filled). The Full result is the player's hint.
 - Inventory = the tiling pieces + distractors. Total <= 30 items per level (the controller adds rows as needed). Distractors scale with the level:
-  L1 none, L2-3 about 4-6, L4-5 about 6-8, L6-7 about 8-10, L8-9 about 10-12, L10 about 12-14.
+  L1 none, L2 exactly 1, L3 exactly 2 (tutorial, see the table), L4-5 about 6-8, L6-7 about 8-10, L8-9 about 10-12, L10 about 12-14.
 - A single unrequired-type piece placed anywhere must produce Failure; a partial result (>=1 requirement right, nothing wrong) must be possible
   in every level from L2 on.
 - Distinct tilings per level; shuffle the shown order ("order"), do not list pieces grouped by type.

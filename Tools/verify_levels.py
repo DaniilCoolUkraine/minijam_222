@@ -85,36 +85,23 @@ CATALOGUE_ORDER = [c[0] for c in CATALOGUE]
 # ---------------------------------------------------------------------------------------------- objects
 # (id, name, hex colour, rows). Hole in the millstone is intended. Cell counts are listed in the comments.
 OBJECTS = [
-    ("axe", "Axe", "#B0BEC5", [  # 20
-        "##..#",
-        "#####",
-        "#####",
-        "##..#",
-        "....#",
-        "....#",
-        "....#",
-        "....#"]),
-    ("pickaxe", "Pickaxe", "#90A4AE", [  # 20
-        ".#######.",
-        "##..#..##",
-        "#...#...#",
-        "....#....",
-        "....#....",
-        "....#....",
-        "....#....",
-        "....#...."]),
-    ("pitchfork", "Pitchfork", "#A1887F", [  # 27
-        "#..#..#",
-        "#..#..#",
-        "#..#..#",
-        "#######",
-        ".#####.",
-        "...#...",
-        "...#...",
-        "...#...",
-        "...#...",
-        "...#...",
-        "...#..."]),
+    # Levels 1-3 are tutorial levels: the silhouette is only the part of the tool that is being enchanted.
+    ("axe", "Axe", "#B0BEC5", [  # 4: the handle only
+        "#",
+        "#",
+        "#",
+        "#"]),
+    ("pickaxe", "Pickaxe", "#90A4AE", [  # 6: head + handle
+        "###",
+        ".#.",
+        ".#.",
+        ".#."]),
+    ("pitchfork", "Pitchfork", "#A1887F", [  # 8: two prongs + crossbar + handle
+        "#.#",
+        "###",
+        ".#.",
+        ".#.",
+        ".#."]),
     ("scissors", "Scissors", "#CFD8DC", [  # 31
         "##...##",
         ".##.##.",
@@ -190,15 +177,15 @@ OBJECTS = [
 ]
 OBJ = {o[0]: o[3] for o in OBJECTS}
 # silhouette cell range per object from docs/LEVELS.md (target range)
-CELL_RANGE = {"axe": (16, 20), "pickaxe": (20, 24), "pitchfork": (24, 28), "scissors": (28, 32), "hammer": (32, 36),
+CELL_RANGE = {"axe": (4, 4), "pickaxe": (6, 6), "pitchfork": (8, 8), "scissors": (28, 32), "hammer": (32, 36),
               "shovel": (36, 42), "plow": (40, 46), "anvil": (44, 50), "scythe": (48, 54), "millstone": (56, 64)}
 
 # ---------------------------------------------------------------------------------------------- quest table of docs/LEVELS.md
 # The requirement table of the doc, used to report deviations (none at the moment).
 DOC_REQS = {
-    "axe": [("sharpness", 0)],
-    "pickaxe": [("efficiency", 3)],
-    "pitchfork": [("durability", 0), ("sharpness", 2)],
+    "axe": [("durability", 0)],
+    "pickaxe": [("efficiency", 3), ("durability", 1)],
+    "pitchfork": [("durability", 2), ("sharpness", 2)],
     "scissors": [("sharpness", 3), ("durability", 0)],
     "hammer": [("durability", 2), ("efficiency", 0), ("haste", 3)],
     "shovel": [("efficiency", 3), ("durability", 1), ("luck", 2)],
@@ -208,11 +195,11 @@ DOC_REQS = {
     "millstone": [("durability", 3), ("efficiency", 2), ("protection", 3), ("haste", 1), ("luck", 2)],
 }
 # unrequired ("wrong") enchantment types in each starting inventory, per the doc
-DOC_WRONG = {"axe": [], "pickaxe": ["durability"], "pitchfork": ["haste"], "scissors": ["luck", "haste"],
+DOC_WRONG = {"axe": [], "pickaxe": ["haste"], "pitchfork": ["haste"], "scissors": ["luck", "haste"],
              "hammer": ["luck", "protection"], "shovel": ["sharpness"], "plow": ["haste"], "anvil": ["luck"],
              "scythe": ["durability", "protection"], "millstone": ["sharpness"]}
 # allowed number of distractors per level (1-based), from the doc: L1 none, L2-3 4-6, L4-5 6-8, L6-7 8-10, L8-9 10-12, L10 12-14
-DISTRACTOR_RANGE = {1: (0, 0), 2: (4, 6), 3: (4, 6), 4: (6, 8), 5: (6, 8), 6: (8, 10), 7: (8, 10), 8: (10, 12),
+DISTRACTOR_RANGE = {1: (0, 0), 2: (1, 1), 3: (2, 2), 4: (6, 8), 5: (6, 8), 6: (8, 10), 7: (8, 10), 8: (10, 12),
                     9: (10, 12), 10: (12, 14)}
 
 # ---------------------------------------------------------------------------------------------- levels
@@ -222,35 +209,26 @@ DISTRACTOR_RANGE = {1: (0, 0), 2: (4, 6), 3: (4, 6), 4: (6, 8), 5: (6, 8), 6: (8
 #   order:       the shuffled starting inventory shown to the player (exactly tiling + distractors)
 # Entry "ench:shape" = enchanted piece, "shape" = plain piece. Texts are filled in from Tools/level_texts.py.
 LEVELS = [
-    {
-        "asset": "Level_01_Axe", "object": "axe",
-        "reqs": [("sharpness", 0)],
-        "tiling": ["sharpness:domino", "sharpness:dominov", "sharpness:dot", "sharpness:i3", "sharpness:i4v",
-            "sharpness:j180", "sharpness:l270"],
+    {   # tutorial: one handle, one stick
+        "asset": "Level_01_Axe", "object": "axe", "tutorial": True,
+        "reqs": [("durability", 0)],
+        "tiling": ["durability:i4v"],
         "distractors": [],
-        "order": ["sharpness:j180", "sharpness:dominov", "sharpness:i4v", "sharpness:domino", "sharpness:l270",
-            "sharpness:dot", "sharpness:i3"],
+        "order": ["durability:i4v"],
     },
-    {
-        "asset": "Level_02_Pickaxe", "object": "pickaxe",
-        "reqs": [("efficiency", 3)],
-        "tiling": ["efficiency:domino", "efficiency:dominov", "efficiency:dominov", "efficiency:dot",
-            "efficiency:i3", "efficiency:j180", "efficiency:l3", "efficiency:l3_90"],
-        "distractors": ["durability:dominov", "durability:i3v", "durability:l180", "durability:l90",
-            "durability:l3_180"],
-        "order": ["durability:l180", "efficiency:dominov", "efficiency:j180", "durability:dominov",
-            "efficiency:dominov", "efficiency:l3_90", "durability:l90", "efficiency:i3", "durability:l3_180",
-            "efficiency:dot", "efficiency:domino", "durability:i3v", "efficiency:l3"],
+    {   # tutorial: head + handle; 2 right, 1 wrong (an enchantment type the quest never asked for)
+        "asset": "Level_02_Pickaxe", "object": "pickaxe", "tutorial": True,
+        "reqs": [("efficiency", 3), ("durability", 1)],
+        "tiling": ["efficiency:t", "durability:dominov"],
+        "distractors": ["haste:dominov"],
+        "order": ["haste:dominov", "efficiency:t", "durability:dominov"],
     },
-    {
-        "asset": "Level_03_Pitchfork", "object": "pitchfork",
-        "reqs": [("durability", 0), ("sharpness", 2)],
-        "tiling": ["durability:i4v", "durability:i4v", "durability:j", "durability:o", "sharpness:domino",
-            "sharpness:dominov", "sharpness:dot", "sharpness:i3v", "sharpness:l3_270"],
-        "distractors": ["haste:l", "haste:l90", "haste:i3", "haste:j270", "sharpness:l", "sharpness:j"],
-        "order": ["haste:i3", "haste:j270", "sharpness:dominov", "sharpness:domino", "durability:i4v", "sharpness:l",
-            "haste:l", "durability:o", "sharpness:l3_270", "haste:l90", "sharpness:j", "durability:i4v",
-            "sharpness:dot", "sharpness:i3v", "durability:j"],
+    {   # tutorial: 5 entries, 3 right, 2 wrong (one unrequested type, one right type at the wrong tier)
+        "asset": "Level_03_Pitchfork", "object": "pitchfork", "tutorial": True,
+        "reqs": [("durability", 2), ("sharpness", 2)],
+        "tiling": ["durability:i3v", "sharpness:l3_270", "sharpness:dominov"],
+        "distractors": ["haste:dominov", "sharpness:i4v"],
+        "order": ["sharpness:dominov", "haste:dominov", "durability:i3v", "sharpness:i4v", "sharpness:l3_270"],
     },
     {
         "asset": "Level_04_Scissors", "object": "scissors",
@@ -731,17 +709,21 @@ def verify():
             check(plain_count == 0, name + ": no plain pieces allowed before L6")
         else:
             check(plain_count >= 1, name + ": plain filler expected from L6 on")
-        # tutorial rules
+        # tutorial rules (levels 1-3: partial tool silhouettes, small inventories)
+        tutorial = bool(lvl.get("tutorial"))
         if num == 1:
-            check(inv_types == {"sharpness"} and len(reqs) == 1 and plain_count == 0 and not distractors,
-                  "L1 must contain ONLY sharpness pieces, no plain, no distractors")
+            check(len(items) == 1 and len(tiling) == 1 and not distractors and len(reqs) == 1 and plain_count == 0,
+                  "L1: the inventory is exactly ONE correct piece (the stick)")
+            check(inv_types == {"durability"} and reqs == [("durability", 0)], "L1: only durability, any tier")
         if num == 2:
-            check(len(inv_types) == 2 and len(req_types) == 1, "L2: 2 types in the inventory with 1 right")
-            check(reqs[0][1] == 3, "L2: pickaxe needs a tier III piece")
+            check(len(items) == 3 and len(tiling) == 2 and len(distractors) == 1 and len(reqs) == 2,
+                  "L2: 3 inventory entries = 2 correct + 1 wrong, 2 requirements")
+            check(len(wrong_types) == 1, "L2: the wrong piece is of an unrequested type")
         if num == 3:
-            check(len(inv_types) == 3 and len(req_types) == 2, "L3: 3 types in the inventory with 2 right")
-            check(any(e == "sharpness" and len(SHAPE_CELLS[s]) == 4 for e, s in distractors),
-                  "L3: at least one 4-cell sharpness piece (overshoots tier II)")
+            check(len(items) == 5 and len(tiling) == 3 and len(distractors) == 2 and len(reqs) == 2,
+                  "L3: 5 inventory entries = 3 correct + 2 wrong")
+            check(len(wrong_types) == 1 and any(d[0] in req_types for d in distractors),
+                  "L3: one wrong piece of an unrequested type and one of a required type at the wrong tier")
         # overshoot decoys: a piece of a required type above the required tier (impossible for tier III / any)
         overshoot = [d for d in distractors if d[0] in req_tier and req_tier[d[0]] > 0
                      and tier_of(len(SHAPE_CELLS[d[1]])) > req_tier[d[0]]]
@@ -775,7 +757,8 @@ def verify():
                 check(max(sz) >= 4, "%s: %s tier III needs a 4+ cell piece" % (name, e))
             all_tier_use.add(t)
         shapes_used = set(s for _, s in tiling)
-        check(len(shapes_used) >= max(4, len(tiling) // 3), "%s: tiling uses too few different shapes" % name)
+        if not tutorial:
+            check(len(shapes_used) >= max(4, len(tiling) // 3), "%s: tiling uses too few different shapes" % name)
         print("  tiling: %d pieces (cells x count: %s), %d different shapes" % (
             len(tiling), ", ".join("%dx%d" % (k, v) for k, v in sorted(multiset([len(SHAPE_CELLS[s]) for _, s in tiling]).items())),
             len(shapes_used)))
@@ -819,7 +802,7 @@ def verify():
                 check(can_pack(sil, [d]) and evaluate([d], reqs)[0] == "Failure", "%s: (c) %s does not give Failure" % (name, item_id(d)))
                 check(evaluate([d, tiling[0]], reqs)[0] == "Failure", "%s: (c) %s + a right piece must be Failure" % (name, item_id(d)))
             print("  c) a single unrequired piece (%d kinds) gives Failure" % len(set(wrong_pieces)))
-        if num >= 3:
+        if num >= 2:
             partial_single = [t for t in tiling if evaluate([t], reqs)[0] == "Partial" and can_pack(sil, [t])]
             check(partial_single, name + ": (c) no single right piece gives Partial")
             desc = ""
@@ -830,24 +813,17 @@ def verify():
                         break
                 if desc:
                     break
-            if overshoot:
+            if overshoot and not tutorial:
                 check(desc, name + ": (c) no Partial arrangement involving a wrong-tier decoy")
             # a type placed at the wrong tier gives no point and no failure
             print("  c) Partial packable: single %s%s" % (item_id(partial_single[0]) if partial_single else "-",
                                                          "; with decoy " + desc if desc else ""))
-        if num == 2:
-            low = [t for t in tiling if len(SHAPE_CELLS[t[1]]) < 4]
-            check(evaluate(low, reqs)[0] == "Failure", name + ": (c) pieces below tier III must give Failure")
-            check(len(low) < len(tiling), name + ": (c) tiling needs a 4+ cell piece")
-            print("  c) single requirement: Partial cannot exist (evaluator rules); sub-tier arrangement gives Failure")
 
-        # ---- d) level 1
+        # ---- d) level 1: the single stick is the whole inventory
         if num == 1:
-            allp = list(items)
-            check(evaluate(allp, reqs)[0] == "Full", "L1: all pieces placed must be Full")
-            check(all(evaluate([p], reqs)[0] == "Full" for p in items), "L1: every single piece must already be Full")
-            check(all(evaluate(list(sub), reqs)[0] == "Full" for sub in (items[:3], items[2:], items[::2])), "L1: any arrangement is Full")
-            print("  d) L1: only sharpness, any arrangement is Full")
+            check(evaluate(list(items), reqs)[0] == "Full", "L1: placing the stick must be Full")
+            check(evaluate([], reqs)[0] == "Failure", "L1: an empty object must be Failure")
+            print("  d) L1: one durability stick; placing it is Full, placing nothing is Failure")
 
     # ---- campaign level checks
     check({1, 2, 3} <= all_tier_use, "campaign should use tier I, II and III requirements")
