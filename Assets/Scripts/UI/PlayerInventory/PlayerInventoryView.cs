@@ -196,8 +196,8 @@ namespace ShapeInventory.UI.PlayerInventory
             foreach (var kv in _visuals)
             {
                 var v = kv.Value;
-                if (v == null || v.Shape == null) continue;
-                v.Shape.SetAlpha(kv.Key == _draggedItem ? DimmedAlpha : 1f);
+                if (v == null) continue;
+                v.SetAlpha(kv.Key == _draggedItem ? DimmedAlpha : 1f);
             }
         }
 
@@ -226,7 +226,7 @@ namespace ShapeInventory.UI.PlayerInventory
             var miniCell = new Vector2(_cellSize.x / maxDim * MiniShapeFill, _cellSize.y / maxDim * MiniShapeFill);
 
             var graphic = shapeGo.GetComponent<ItemShapeGraphic>();
-            graphic.Bind(item, miniCell, 1f, false);
+            graphic.Bind(item, miniCell, 1f, false, false); // badge is drawn cell-level instead (miniature is too small)
 
             float shapeW = shape.Width * miniCell.x;
             float shapeH = shape.Height * miniCell.y;
@@ -237,7 +237,56 @@ namespace ShapeInventory.UI.PlayerInventory
             visual.Item = item;
             visual.Shape = graphic;
             visual.Rect = rt;
+            visual.BadgeGroup = item.Data.HasEnchantment ? CreateCellBadge(rt, item) : null;
             return visual;
+        }
+
+        /// <summary>Thin coloured strip along the cell's top edge plus a "SHP III" label along its bottom edge.</summary>
+        private CanvasGroup CreateCellBadge(RectTransform cell, ItemInstance item)
+        {
+            var type = item.Data.Enchantment;
+            string label = EnchantmentStyle.Badge(type, item.Data.Tier);
+
+            var go = new GameObject("EnchantBadge", typeof(RectTransform), typeof(CanvasGroup));
+            var root = (RectTransform)go.transform;
+            root.SetParent(cell, false);
+            root.anchorMin = Vector2.zero;
+            root.anchorMax = Vector2.one;
+            root.offsetMin = Vector2.zero;
+            root.offsetMax = Vector2.zero;
+
+            var group = go.GetComponent<CanvasGroup>();
+            group.blocksRaycasts = false;
+            group.interactable = false;
+
+            // Top strip.
+            var stripGo = new GameObject("Strip", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+            var stripRt = (RectTransform)stripGo.transform;
+            stripRt.SetParent(root, false);
+            stripRt.anchorMin = new Vector2(0f, 1f);
+            stripRt.anchorMax = new Vector2(1f, 1f);
+            stripRt.pivot = new Vector2(0.5f, 1f);
+            float stripH = Mathf.Max(3f, _cellSize.y * 0.07f);
+            stripRt.offsetMin = new Vector2(CellGap * 0.5f, -CellGap * 0.5f - stripH);
+            stripRt.offsetMax = new Vector2(-CellGap * 0.5f, -CellGap * 0.5f);
+            var stripImg = stripGo.GetComponent<Image>();
+            stripImg.color = EnchantmentStyle.GetColor(type);
+            stripImg.raycastTarget = false;
+
+            // Bottom label (full cell width, may overflow horizontally rather than clip).
+            if (label.Length > 0)
+            {
+                int fontSize = Mathf.Max(8, Mathf.RoundToInt(_cellSize.y * 0.26f));
+                var text = UiText.CreateOutlinedLabel(root, "Label", label, fontSize, TextAnchor.LowerCenter);
+                var rt = text.rectTransform;
+                rt.anchorMin = new Vector2(0f, 0f);
+                rt.anchorMax = new Vector2(1f, 0f);
+                rt.pivot = new Vector2(0.5f, 0f);
+                rt.sizeDelta = new Vector2(0f, _cellSize.y * 0.3f);
+                rt.anchoredPosition = new Vector2(0f, CellGap * 0.5f + 1f);
+            }
+
+            return group;
         }
 
         private void PositionVisual(PlayerInventoryItemVisual visual, int cellIndex)
@@ -308,7 +357,7 @@ namespace ShapeInventory.UI.PlayerInventory
             if (payload == null) return;
             _draggedItem = payload.Item;
             var visual = FindVisual(_draggedItem);
-            if (visual != null && visual.Shape != null) visual.Shape.SetAlpha(DimmedAlpha);
+            if (visual != null) visual.SetAlpha(DimmedAlpha);
         }
 
         public void OnDragAccepted(DragPayload payload, IDropTarget target)
