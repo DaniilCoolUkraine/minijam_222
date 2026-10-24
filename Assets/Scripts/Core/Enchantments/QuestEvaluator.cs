@@ -3,7 +3,7 @@ using System.Collections.Generic;
 namespace ShapeInventory.Core
 {
     /// <summary>
-    /// STUB - implemented by Agent A. Rules (frozen, this is the spec):
+    /// Rules (frozen, this is the spec):
     ///
     /// 1. Applied enchantments: for every placed item whose ItemData.Enchantment != None, take the item's
     ///    tier (ItemData.Tier). For each enchantment TYPE keep the HIGHEST tier among placed items of that type.
@@ -24,13 +24,56 @@ namespace ShapeInventory.Core
     {
         public static QuestResult Evaluate(IReadOnlyList<PlacedItem> placed, IReadOnlyList<EnchantmentRequirement> required)
         {
-            // TODO(Agent A)
+            // Highest tier per applied enchantment type. None / missing data is ignored.
+            var applied = new Dictionary<EnchantmentType, int>();
+            if (placed != null)
+            {
+                for (int i = 0; i < placed.Count; i++)
+                {
+                    ItemInstance instance = placed[i].Item;
+                    if (instance == null || instance.Data == null) continue;
+
+                    ItemData data = instance.Data;
+                    if (data.Enchantment == EnchantmentType.None) continue;
+
+                    int tier = data.Tier;
+                    int best;
+                    if (!applied.TryGetValue(data.Enchantment, out best) || tier > best)
+                        applied[data.Enchantment] = tier;
+                }
+            }
+
+            int maxScore = required != null ? required.Count : 0;
+            int score = 0;
+            var requiredTypes = new HashSet<EnchantmentType>();
+            for (int i = 0; i < maxScore; i++)
+            {
+                EnchantmentRequirement req = required[i];
+                requiredTypes.Add(req.Type);
+
+                int appliedTier;
+                if (!applied.TryGetValue(req.Type, out appliedTier)) continue;
+                if (req.AnyTier || appliedTier == req.Tier) score++;
+            }
+
+            int wrongCount = 0;
+            foreach (KeyValuePair<EnchantmentType, int> kv in applied)
+            {
+                if (!requiredTypes.Contains(kv.Key)) wrongCount++;
+            }
+
+            QuestOutcome outcome;
+            if (wrongCount > 0) outcome = QuestOutcome.Failure;
+            else if (score == maxScore) outcome = QuestOutcome.Full; // also covers empty requirements
+            else if (score >= 1) outcome = QuestOutcome.Partial;
+            else outcome = QuestOutcome.Failure;
+
             return new QuestResult
             {
-                Outcome = QuestOutcome.Failure,
-                Score = 0,
-                MaxScore = required != null ? required.Count : 0,
-                WrongCount = 0
+                Outcome = outcome,
+                Score = score,
+                MaxScore = maxScore,
+                WrongCount = wrongCount
             };
         }
     }
