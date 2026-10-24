@@ -66,6 +66,24 @@ are never overwritten. `ShapeInventory -> Validate Levels` checks that each leve
 `Main.unity`: the controller builds the new UI at startup. Level data lives in `Tools/verify_levels.py` (run it, then `--emit` to regenerate
 `Assets/Scripts/Editor/SampleContentData.cs`).
 
+## Main menu and cutscene slot
+
+`ShapeInventory -> Build Main Menu Scene` creates `Assets/Scenes/MainMenu.unity` (title, Play, Quit - Quit is hidden on WebGL) and makes it
+build index 0, with `Main` right after it. Re-running it asks before overwriting, because it replaces your cutscene setup.
+
+The `CutsceneOverlay` (a full-screen panel in front of the menu) carries a **`CutscenePlayer`**. It plays no media itself: every time the
+scene loads it waits `duration` seconds (default 5, real time), then fades out (`fadeOutSeconds`) and hides `rootToHide`.
+The player can skip it by clicking / tapping anywhere, or Enter / Space (the invisible full-screen `SkipButton` is selected in the EventSystem,
+so this works with the old and the new Input System). `skippable` can be turned off.
+
+Plugging in your GIF player:
+- put it under `CutsceneOverlay/CutsceneContent` (delete the placeholder label) and start it from `onStarted` (inspector) or the C# event
+  `CutscenePlayer.Started`; stop it in `onFinished` / `Finished(bool skipped)`, which fire when the time runs out or on skip, BEFORE the fade-out;
+- or tick off `playOnEnable`, start your GIF yourself and call `Play(float seconds)` with the GIF length (`SetDuration`, `Skip`, `IsPlaying`, `Elapsed` are public too).
+
+Timing and skip state live in `Core/Cutscene/CutsceneTimer.cs` (unit-tested in `Assets/Tests/EditMode/CutsceneTimerTests.cs`).
+Note: browsers only start audio after a user gesture, so a GIF-with-sound cutscene in WebGL should expect that.
+
 ## WebGL
 
 - `ShapeInventory -> Apply WebGL Settings` - switches the active build target to WebGL and sets Gzip compression, decompression fallback on, exception support off, run in background on.

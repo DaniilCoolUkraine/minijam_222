@@ -113,7 +113,7 @@ namespace ShapeInventory.Editor
             Debug.Log("ShapeInventory: demo scene saved to " + ScenePath + ". Press Play.");
         }
 
-        private static void AddInputModule(GameObject eventSystemGo)
+        internal static void AddInputModule(GameObject eventSystemGo)
         {
 #if ENABLE_INPUT_SYSTEM && !ENABLE_LEGACY_INPUT_MANAGER
             Type moduleType = Type.GetType("UnityEngine.InputSystem.UI.InputSystemUIInputModule, Unity.InputSystem");
@@ -162,7 +162,8 @@ namespace ShapeInventory.Editor
                 }
             }
 
-            if (!found) scenes.Insert(0, new EditorBuildSettingsScene(path, true));
+            // Append: the main menu scene (if any) must stay first; MainMenuSceneBuilder keeps that order.
+            if (!found) scenes.Add(new EditorBuildSettingsScene(path, true));
             EditorBuildSettings.scenes = scenes.ToArray();
         }
 
