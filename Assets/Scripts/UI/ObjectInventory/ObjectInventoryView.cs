@@ -16,6 +16,8 @@ namespace ShapeInventory.UI.ObjectInventory
         private const float CellGap = 2f;
         private const float DraggedAlpha = 0.3f;
         private const int PreviewMargin = 1; // preview cells farther than this outside the grid are not drawn
+        private const float SilhouetteAlphaWithUnderlay = 0.45f; // inset cells while an underlay sprite is shown
+        private const float SilhouetteBaseAlphaWithUnderlay = 0.35f; // dark base cells while an underlay sprite is shown
 
         private static readonly Color PreviewValidColor = new Color(0.2f, 0.85f, 0.3f, 0.5f);
         private static readonly Color PreviewInvalidColor = new Color(0.95f, 0.2f, 0.2f, 0.5f);
@@ -24,6 +26,16 @@ namespace ShapeInventory.UI.ObjectInventory
         private RectTransform _silhouetteRoot;
         private RectTransform _itemsRoot;
         private RectTransform _previewRoot;
+
+        // Underlay picture (first sibling inside the grid container); the sprite persists across Bind/Unbind.
+        private Image _underlayImage;
+        private Sprite _underlaySprite;
+
+        // Silhouette cell images of the current binding (for in-place alpha updates) and their opaque colours.
+        private readonly List<Image> _silhouetteBaseImages = new List<Image>();
+        private readonly List<Image> _silhouetteInsetImages = new List<Image>();
+        private Color _silhouetteBaseColor = Color.white;
+        private Color _silhouetteInsetColor = Color.white;
 
         private IObjectInventory _model;
         private Vector2 _cellSize = new Vector2(64f, 64f);
@@ -74,9 +86,12 @@ namespace ShapeInventory.UI.ObjectInventory
             _grid.anchorMin = _grid.anchorMax = new Vector2(0.5f, 0.5f);
             _grid.pivot = new Vector2(0f, 1f); // top-left, y grows downward
 
+            // Layer order back to front: Underlay (created lazily, kept as first sibling), Silhouette, Items, Preview.
             _silhouetteRoot = CreateFillRect("Silhouette", _grid);
             _itemsRoot = CreateFillRect("Items", _grid);
             _previewRoot = CreateFillRect("Preview", _grid);
+
+            ApplyUnderlay();
         }
 
         private static RectTransform CreateRect(string name, RectTransform parent)
@@ -123,11 +138,72 @@ namespace ShapeInventory.UI.ObjectInventory
         }
 
         /// <summary>
-        /// STUB (Agent C implements). Sets the picture drawn BEHIND the silhouette grid, stretched over the grid
-        /// bounds; null clears it. May be called before or after Bind and persists across Bind/Unbind until changed.
+        /// Sets the picture drawn BEHIND the silhouette grid, stretched over the grid bounds; null clears it.
+        /// May be called before or after Bind and persists across Bind/Unbind until changed.
+        /// While a sprite is set the silhouette cells are drawn semi-transparent so the artwork shows through.
         /// </summary>
         public void SetUnderlay(Sprite sprite)
         {
+            _underlaySprite = sprite;
+            if (_grid == null) return; // hierarchy not built yet: ApplyUnderlay runs from EnsureHierarchy
+            ApplyUnderlay();
+        }
+
+        private void ApplyUnderlay()
+        {
+            if (_grid == null) return;
+
+            if (_underlaySprite != null)
+            {
+                if (_underlayImage == null)
+                {
+                    var go = new GameObject("Underlay", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+                    var rt = (RectTransform)go.transform;
+                    rt.SetParent(_grid, false);
+                    rt.localScale = Vector3.one;
+                    rt.anchorMin = Vector2.zero;
+                    rt.anchorMax = Vector2.one;
+                    rt.offsetMin = Vector2.zero;
+                    rt.offsetMax = Vector2.zero;
+
+                    _underlayImage = go.GetComponent<Image>();
+                    _underlayImage.raycastTarget = false; // drops still reach the transparent root Image
+                    _underlayImage.preserveAspect = false; // sprite is authored to the silhouette bounding box
+                    _underlayImage.color = Color.white;
+                }
+
+                _underlayImage.sprite = _underlaySprite;
+                _underlayImage.rectTransform.SetAsFirstSibling();
+                if (!_underlayImage.gameObject.activeSelf) _underlayImage.gameObject.SetActive(true);
+            }
+            else if (_underlayImage != null)
+            {
+                _underlayImage.sprite = null;
+                _underlayImage.gameObject.SetActive(false);
+            }
+
+            ApplySilhouetteAlpha();
+        }
+
+        /// <summary>Re-tints the existing silhouette cells for the current underlay state (no rebuild).</summary>
+        private void ApplySilhouetteAlpha()
+        {
+            bool underlay = _underlaySprite != null;
+            Color baseColor = _silhouetteBaseColor;
+            Color insetColor = _silhouetteInsetColor;
+            if (underlay)
+            {
+                baseColor.a *= SilhouetteBaseAlphaWithUnderlay;
+                insetColor.a *= SilhouetteAlphaWithUnderlay;
+            }
+
+            for (int i = 0; i < _silhouetteBaseImages.Count; i++)
+                if (_silhouetteBaseImages[i] != null)
+                    _silhouetteBaseImages[i].color = baseColor;
+
+            for (int i = 0; i < _silhouetteInsetImages.Count; i++)
+                if (_silhouetteInsetImages[i] != null)
+                    _silhouetteInsetImages[i].color = insetColor;
         }
 
         /// <summary>Detaches from the model and clears all visuals. Safe to call when not bound.</summary>
@@ -144,6 +220,9 @@ namespace ShapeInventory.UI.ObjectInventory
                 if (kv.Value != null)
                     Destroy(kv.Value.gameObject);
             _visuals.Clear();
+
+            _silhouetteBaseImages.Clear();
+            _silhouetteInsetImages.Clear();
 
             if (_silhouetteRoot != null)
                 for (int i = _silhouetteRoot.childCount - 1; i >= 0; i--)
@@ -171,6 +250,12 @@ namespace ShapeInventory.UI.ObjectInventory
             Color edge = Color.Lerp(fill, Color.black, 0.35f);
             edge.a = fill.a;
 
+            // Opaque colours are remembered; the underlay-dependent alpha is applied by ApplySilhouetteAlpha.
+            _silhouetteBaseColor = edge;
+            _silhouetteInsetColor = fill;
+            _silhouetteBaseImages.Clear();
+            _silhouetteInsetImages.Clear();
+
             for (int y = 0; y < _model.Height; y++)
             {
                 for (int x = 0; x < _model.Width; x++)
@@ -181,8 +266,12 @@ namespace ShapeInventory.UI.ObjectInventory
                     var outer = CreateCellImage("Cell_" + x + "_" + y, _silhouetteRoot, x, y, 0f, edge);
                     var inner = CreateCellImage("Inset", outer.rectTransform, 0, 0, CellGap, fill);
                     inner.rectTransform.anchoredPosition = new Vector2(CellGap * 0.5f, -CellGap * 0.5f);
+                    _silhouetteBaseImages.Add(outer);
+                    _silhouetteInsetImages.Add(inner);
                 }
             }
+
+            ApplySilhouetteAlpha();
         }
 
         private Image CreateCellImage(string name, RectTransform parent, int cx, int cy, float gap, Color color)
