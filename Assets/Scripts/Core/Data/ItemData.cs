@@ -10,6 +10,7 @@ namespace ShapeInventory.Core
         [SerializeField] private string displayName = "Item";
         [SerializeField] private Sprite icon;
         [SerializeField] private Color color = Color.white;
+        [SerializeField] private EnchantmentType enchantment = EnchantmentType.None;
 
         [Tooltip("Top row first. '#' = filled cell, '.' = empty. Example: \"##\", \"#.\"")]
         [SerializeField] private string[] shapeRows = { "#" };
@@ -23,6 +24,12 @@ namespace ShapeInventory.Core
         public string[] ShapeRows => shapeRows;
         public ItemShape Shape => _shape ?? (_shape = ItemShape.FromRows(shapeRows));
 
+        public EnchantmentType Enchantment => enchantment;
+        public bool HasEnchantment => enchantment != EnchantmentType.None;
+
+        /// <summary>Tier derived from the item's size (see EnchantmentTierRules). Meaningful only when HasEnchantment.</summary>
+        public int Tier => EnchantmentTierRules.GetTier(Shape.CellCount);
+
         private void OnValidate() => _shape = null;
 
         /// <summary>Runtime/editor/test factory (ScriptableObject.CreateInstance + Initialize).</summary>
@@ -35,6 +42,14 @@ namespace ShapeInventory.Core
             data.shapeRows = shapeRows;
             data._shape = null;
             data.name = id;
+            return data;
+        }
+
+        /// <summary>Same as the plain factory but with an enchantment.</summary>
+        public static ItemData Create(string id, string displayName, Color color, EnchantmentType enchantment, params string[] shapeRows)
+        {
+            var data = Create(id, displayName, color, shapeRows);
+            data.enchantment = enchantment;
             return data;
         }
     }

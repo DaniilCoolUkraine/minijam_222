@@ -122,6 +122,14 @@ namespace ShapeInventory.UI.ObjectInventory
             RefreshItems();
         }
 
+        /// <summary>
+        /// STUB (Agent C implements). Sets the picture drawn BEHIND the silhouette grid, stretched over the grid
+        /// bounds; null clears it. May be called before or after Bind and persists across Bind/Unbind until changed.
+        /// </summary>
+        public void SetUnderlay(Sprite sprite)
+        {
+        }
+
         /// <summary>Detaches from the model and clears all visuals. Safe to call when not bound.</summary>
         public void Unbind()
         {
