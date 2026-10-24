@@ -34,8 +34,37 @@ Shapes and silhouettes are written as text rows, top row first, `#` = filled, `.
 
 - `levels` - the level order.
 - `playerColumns` / `playerRows` - player inventory size (default 5 x 4; rows grow automatically if a level has more items).
-- `autoAdvanceOnChange` - run the fill check after every change of the object inventory and advance automatically. **Off by default** (see the next section for why).
-- Panels, the Done button, the status text and the drag controller are created in code if the references are left empty.
+- Panels, the Done button, the status text, the quest bubble / result / score texts and the drag controller are created in code if the references are left empty.
+- There is no auto-advance any more: the quest is judged only when **Done** is pressed (see "Enchantments and quests").
+
+## Enchantments and quests
+
+Every item has an `EnchantmentType` (Durability, Haste, Sharpness, Efficiency, Luck, Protection, or None = plain filler).
+The **tier** comes from the item's size: 1-2 cells = I, 3 cells = II, 4+ cells = III (`EnchantmentTierRules`, change it there).
+Pieces show a badge such as `SHP III`.
+
+Every `LevelData` has an object sprite (drawn behind the silhouette grid), a story from the object's owner (`questDescription`,
+a hint, the requirement list is never shown), the `requirements` (type + tier, tier 0 = any tier) and three reactions:
+`successText`, `partialText`, `failureText`.
+
+Pressing Done runs `QuestEvaluator.Evaluate(placedItems, level.Requirements)` (`Assets/Scripts/Core/Enchantments/`):
+
+| Outcome | Rule | Shown as |
+|---|---|---|
+| Full | every requirement met (right type AND right tier) and no enchantment type applied that the quest did not ask for | green, `successText` |
+| Partial | at least one requirement met, nothing unrequired applied, but not everything right (missing one, or right type at the wrong tier) | amber, `partialText` |
+| Failure | nothing correct, or any unrequired enchantment applied | red, `failureText` |
+
+When one type is placed several times, its highest tier counts. Plain pieces are ignored. **Every outcome advances** to the next level
+(after the reaction is shown); the end screen sums the scores. A Full result is designed to fill the silhouette 100% - the filled
+shape is the player's hint about which pieces to use.
+
+After pulling this branch run `ShapeInventory -> Create Sample Content` (alias `Upgrade Existing Content`) once. It **updates your existing
+assets in place** (GUIDs and scene references survive), adds 33 enchanted items, fills the five levels (stories, requirements, reactions)
+and generates placeholder sprites in `Assets/Content/Sprites/` only when a file is missing - replace those PNGs with real art, they
+are never overwritten. `ShapeInventory -> Validate Levels` checks that each level still has a Full tiling. You do not have to rebuild
+`Main.unity`: the controller builds the new UI at startup. Level data lives in `Tools/verify_levels.py` (run it, then `--emit` to regenerate
+`Assets/Scripts/Editor/SampleContentData.cs`).
 
 ## WebGL
 

@@ -105,7 +105,6 @@ namespace ShapeInventory.Editor
             SetRef(so, "doneButton", ui.DoneButton);
             SetRef(so, "statusText", ui.StatusText);
             SetRef(so, "dragController", dragController);
-            SetBool(so, "autoAdvanceOnChange", false);
             so.ApplyModifiedPropertiesWithoutUndo();
 
             EditorSceneManager.SaveScene(scene, ScenePath);

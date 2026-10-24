@@ -54,11 +54,6 @@ namespace ShapeInventory.Game
         [SerializeField] private Text resultText;
         [SerializeField] private Text scoreText;
 
-        // Obsolete: quests are only evaluated when Done is pressed. Kept so old scenes / editor tooling still load.
-#pragma warning disable 0414
-        [HideInInspector] [SerializeField] private bool autoAdvanceOnChange = false;
-#pragma warning restore 0414
-
         private PlayerInventoryView _playerView;
         private ObjectInventoryView _objectView;
         private IPlayerInventory _playerModel;
