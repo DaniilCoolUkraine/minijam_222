@@ -16,6 +16,16 @@ namespace ShapeInventory.UI.PlayerInventory
         internal ItemShapeGraphic Shape;
         internal RectTransform Rect;
 
+        /// <summary>Cell-level enchantment strip + label container (null for plain items). Has its own CanvasGroup.</summary>
+        internal CanvasGroup BadgeGroup;
+
+        /// <summary>Applies the (dimmed) alpha to the miniature shape and the cell-level badge.</summary>
+        internal void SetAlpha(float alpha)
+        {
+            if (Shape != null) Shape.SetAlpha(alpha);
+            if (BadgeGroup != null) BadgeGroup.alpha = alpha;
+        }
+
         public void OnBeginDrag(PointerEventData eventData)
         {
             if (View != null) View.HandleBeginDrag(this, eventData);

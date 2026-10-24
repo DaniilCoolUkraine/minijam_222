@@ -14,6 +14,7 @@ namespace ShapeInventory.UI.Common
     {
         private readonly List<Image> _cellImages = new List<Image>();
         private Image _iconImage;
+        private Text _badgeText;
         private RectTransform _rect;
         private CanvasGroup _group;
 
@@ -25,8 +26,8 @@ namespace ShapeInventory.UI.Common
 
         public RectTransform Rect => _rect != null ? _rect : (_rect = (RectTransform)transform);
 
-        /// <summary>Builds the visual. cellSize is in canvas units; gap shrinks each cell image to leave a visible border.</summary>
-        public void Bind(ItemInstance item, Vector2 cellSize, float gap = 2f, bool raycastTarget = true)
+        /// <summary>Builds the visual. cellSize is in canvas units; gap shrinks each cell image to leave a visible border. When showBadge is true and the item is enchanted, an enchantment badge (e.g. "SHP III") is drawn on the shape's centre cell.</summary>
+        public void Bind(ItemInstance item, Vector2 cellSize, float gap = 2f, bool raycastTarget = true, bool showBadge = true)
         {
             Clear();
             Item = item;
@@ -71,6 +72,25 @@ namespace ShapeInventory.UI.Common
                 _iconImage.preserveAspect = true;
                 _iconImage.raycastTarget = false;
             }
+
+            if (showBadge && item.Data.HasEnchantment)
+                CreateBadge(item, rect, cellSize);
+        }
+
+        private void CreateBadge(ItemInstance item, RectTransform parent, Vector2 cellSize)
+        {
+            string label = EnchantmentStyle.Badge(item.Data.Enchantment, item.Data.Tier);
+            if (label.Length == 0) return;
+
+            var centre = item.Shape.GetCenterCell();
+            int fontSize = Mathf.Max(9, Mathf.RoundToInt(cellSize.y * 0.32f));
+
+            _badgeText = UiText.CreateOutlinedLabel(parent, "EnchantBadge", label, fontSize, TextAnchor.MiddleCenter);
+            var rt = _badgeText.rectTransform;
+            rt.anchorMin = rt.anchorMax = new Vector2(0f, 1f);
+            rt.pivot = new Vector2(0.5f, 0.5f);
+            rt.anchoredPosition = new Vector2((centre.x + 0.5f) * cellSize.x, -(centre.y + 0.5f) * cellSize.y);
+            rt.sizeDelta = new Vector2(cellSize.x, cellSize.y);
         }
 
         public void Clear()
@@ -82,6 +102,9 @@ namespace ShapeInventory.UI.Common
 
             if (_iconImage != null) Destroy(_iconImage.gameObject);
             _iconImage = null;
+
+            if (_badgeText != null) Destroy(_badgeText.gameObject);
+            _badgeText = null;
             Item = null;
         }
 
