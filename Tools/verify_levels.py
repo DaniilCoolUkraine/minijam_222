@@ -415,6 +415,8 @@ def evaluate(placed, reqs):
         outcome = "Partial"
     else:
         outcome = "Failure"
+    if outcome == "Failure":
+        score = 0  # a failed quest never scores (QuestEvaluator)
     return outcome, score, max_score, wrong
 
 

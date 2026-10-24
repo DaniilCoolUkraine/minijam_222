@@ -55,7 +55,7 @@ Pressing Done runs `QuestEvaluator.Evaluate(placedItems, level.Requirements)` (`
 | Partial | at least one requirement met, nothing unrequired applied, but not everything right (missing one, or right type at the wrong tier) | amber, `partialText` |
 | Failure | nothing correct, or any unrequired enchantment applied | red, `failureText` |
 
-When one type is placed several times, its highest tier counts. Plain pieces are ignored. **Every outcome advances** to the next level
+A Failure always scores 0, even when every requirement was met alongside an unrequested type. When one type is placed several times, its highest tier counts. Plain pieces are ignored. **Every outcome advances** to the next level
 (after the reaction is shown); the end screen sums the scores. A Full result is designed to fill the silhouette 100% - the filled
 shape is the player's hint about which pieces to use.
 
