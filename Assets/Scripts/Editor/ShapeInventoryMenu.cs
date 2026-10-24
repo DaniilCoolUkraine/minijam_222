@@ -16,201 +16,34 @@ namespace ShapeInventory.Editor
     /// <summary>Editor menu: sample content, demo scene and WebGL helpers. Menu root: "ShapeInventory/".</summary>
     public static class ShapeInventoryMenu
     {
-        private const string ContentRoot = "Assets/Content";
-        private const string ItemsDir = "Assets/Content/Items";
-        private const string ObjectsDir = "Assets/Content/Objects";
-        private const string LevelsDir = "Assets/Content/Levels";
+        private const string LevelsDir = SampleContentBuilder.LevelsDir;
         private const string ScenesDir = "Assets/Scenes";
         private const string ScenePath = "Assets/Scenes/Main.unity";
         private const string WebGlBuildPath = "Build/WebGL";
 
-        // ------------------------------------------------------------------ sample data definitions
-
-        private sealed class ItemDef
-        {
-            public string Id;
-            public string Name;
-            public string Hex;
-            public string[] Rows;
-        }
-
-        private sealed class ObjectDef
-        {
-            public string Id;
-            public string Name;
-            public string Hex;
-            public string[] Rows;
-        }
-
-        private sealed class LevelDef
-        {
-            public string AssetName;
-            public string ObjectId;
-            public string[] ItemIds;
-        }
-
-        private static ItemDef Item(string id, string name, string hex, params string[] rows)
-        {
-            return new ItemDef { Id = id, Name = name, Hex = hex, Rows = rows };
-        }
-
-        private static ObjectDef Obj(string id, string name, string hex, params string[] rows)
-        {
-            return new ObjectDef { Id = id, Name = name, Hex = hex, Rows = rows };
-        }
-
-        private static LevelDef Level(string assetName, string objectId, params string[] itemIds)
-        {
-            return new LevelDef { AssetName = assetName, ObjectId = objectId, ItemIds = itemIds };
-        }
-
-        private static readonly ItemDef[] ItemDefs =
-        {
-            Item("i4", "I Piece", "#00BCD4", "####"),
-            Item("i4v", "I Piece (upright)", "#0097A7", "#", "#", "#", "#"),
-            Item("o", "O Piece", "#FDD835", "##", "##"),
-            Item("t", "T Piece", "#AB47BC", "###", ".#."),
-            Item("s", "S Piece", "#66BB6A", ".##", "##."),
-            Item("z", "Z Piece", "#EF5350", "##", ".##"),
-            Item("l", "L Piece", "#FFA726", "#.", "#.", "##"),
-            Item("j", "J Piece", "#42A5F5", ".#", ".#", "##"),
-            Item("dot", "Dot", "#ECEFF1", "#"),
-            Item("domino", "Domino", "#8D6E63", "##"),
-            Item("dominov", "Domino (upright)", "#BCAAA4", "#", "#"),
-            Item("i3", "Bar 3", "#26A69A", "###"),
-            Item("i3v", "Bar 3 (upright)", "#5C6BC0", "#", "#", "#"),
-            Item("l3", "Corner", "#EC407A", "##", "#."),
-        };
-
-        // Silhouettes are hand-written; the sample levels below give pieces that tile them exactly.
-        private static readonly ObjectDef[] ObjectDefs =
-        {
-            Obj("rocket", "Rocket", "#B0BEC5",
-                "..#..",
-                ".###.",
-                ".###.",
-                ".###.",
-                ".###.",
-                ".###.",
-                "#####",
-                "#.#.#"),
-            Obj("tree", "Tree", "#81C784",
-                "..###..",
-                ".#####.",
-                "#######",
-                ".#####.",
-                "..###..",
-                "...#...",
-                "...#...",
-                "...#..."),
-            Obj("boat", "Boat", "#90CAF9",
-                "...#.....",
-                "...##....",
-                "...###...",
-                "...####..",
-                "#########",
-                ".#######.",
-                "..#####.."),
-            Obj("house", "House", "#FFCC80",
-                "....#....",
-                "...###...",
-                "..#####..",
-                ".#######.",
-                ".#######.",
-                ".###.###.",
-                ".###.###."),
-            Obj("cat", "Cat", "#CE93D8",
-                "#.....#",
-                "##...##",
-                "#######",
-                "#######",
-                "#######",
-                ".#####.",
-                "..###.."),
-        };
-
-        private static readonly LevelDef[] LevelDefs =
-        {
-            // 24 cells
-            Level("Level_01_Rocket", "rocket",
-                "i4v", "l", "dominov", "o", "i3v", "dominov", "l3", "dominov"),
-            // 26 cells
-            Level("Level_02_Tree", "tree",
-                "t", "z", "domino", "s", "l3", "t", "i3v", "dominov"),
-            // 31 cells
-            Level("Level_03_Boat", "boat",
-                "i4v", "t", "l", "domino", "i4", "i4v", "l", "dominov", "i3v"),
-            // 35 cells
-            Level("Level_04_House", "house",
-                "i4v", "i3v", "l", "o", "i4v", "domino", "i3v", "dominov", "i4v", "domino", "i3v"),
-            // 35 cells
-            Level("Level_05_Cat", "cat",
-                "t", "i4", "j", "z", "domino", "l", "i4v", "t", "dominov", "i3v"),
-        };
-
         // ------------------------------------------------------------------ (a) sample content
 
+        /// <summary>
+        /// Creates or UPDATES (in place, GUIDs kept) all sample items, objects, object sprites and levels. Idempotent.
+        /// Data lives in SampleContentData.cs (generated from Tools/verify_levels.py); logic in SampleContentBuilder.
+        /// </summary>
         [MenuItem("ShapeInventory/Create Sample Content")]
         public static void CreateSampleContent()
         {
-            EnsureFolder(ContentRoot);
-            EnsureFolder(ItemsDir);
-            EnsureFolder(ObjectsDir);
-            EnsureFolder(LevelsDir);
+            SampleContentBuilder.Run();
+        }
 
-            var items = new Dictionary<string, ItemData>();
-            foreach (var def in ItemDefs)
-            {
-                string path = ItemsDir + "/Item_" + def.Id + ".asset";
-                Color color = ParseColor(def.Hex);
-                ItemData asset = LoadOrCreate<ItemData>(path, () => ItemData.Create(def.Id, def.Name, color, def.Rows));
+        /// <summary>Alias for Create Sample Content: brings assets of an older project version up to date.</summary>
+        [MenuItem("ShapeInventory/Upgrade Existing Content")]
+        public static void UpgradeExistingContent()
+        {
+            SampleContentBuilder.Run();
+        }
 
-                var so = new SerializedObject(asset);
-                so.FindProperty("id").stringValue = def.Id;
-                so.FindProperty("displayName").stringValue = def.Name;
-                so.FindProperty("color").colorValue = color;
-                SetStringArray(so.FindProperty("shapeRows"), def.Rows);
-                so.ApplyModifiedPropertiesWithoutUndo();
-                EditorUtility.SetDirty(asset);
-                items[def.Id] = asset;
-            }
-
-            var objects = new Dictionary<string, ObjectData>();
-            foreach (var def in ObjectDefs)
-            {
-                string path = ObjectsDir + "/Object_" + def.Id + ".asset";
-                Color color = ParseColor(def.Hex);
-                ObjectData asset = LoadOrCreate<ObjectData>(path, () => ObjectData.Create(def.Id, def.Name, color, def.Rows));
-
-                var so = new SerializedObject(asset);
-                so.FindProperty("id").stringValue = def.Id;
-                so.FindProperty("displayName").stringValue = def.Name;
-                so.FindProperty("silhouetteColor").colorValue = color;
-                SetStringArray(so.FindProperty("silhouetteRows"), def.Rows);
-                so.ApplyModifiedPropertiesWithoutUndo();
-                EditorUtility.SetDirty(asset);
-                objects[def.Id] = asset;
-            }
-
-            foreach (var def in LevelDefs)
-            {
-                string path = LevelsDir + "/" + def.AssetName + ".asset";
-                LevelData asset = LoadOrCreate<LevelData>(path, () => LevelData.Create(def.AssetName, null, null));
-
-                var so = new SerializedObject(asset);
-                so.FindProperty("targetObject").objectReferenceValue = objects[def.ObjectId];
-                var arr = so.FindProperty("startingItems");
-                arr.arraySize = def.ItemIds.Length;
-                for (int i = 0; i < def.ItemIds.Length; i++)
-                    arr.GetArrayElementAtIndex(i).objectReferenceValue = items[def.ItemIds[i]];
-                so.ApplyModifiedPropertiesWithoutUndo();
-                EditorUtility.SetDirty(asset);
-            }
-
-            AssetDatabase.SaveAssets();
-            AssetDatabase.Refresh();
-            Debug.Log("ShapeInventory: sample content created under " + ContentRoot + " ("
-                      + ItemDefs.Length + " items, " + ObjectDefs.Length + " objects, " + LevelDefs.Length + " levels).");
+        [MenuItem("ShapeInventory/Validate Levels")]
+        public static void ValidateLevels()
+        {
+            LevelValidator.ValidateAllLevels();
         }
 
         // ------------------------------------------------------------------ (b) demo scene
@@ -264,15 +97,15 @@ namespace ShapeInventory.Editor
             levelsProp.arraySize = levels.Count;
             for (int i = 0; i < levels.Count; i++)
                 levelsProp.GetArrayElementAtIndex(i).objectReferenceValue = levels[i];
-            so.FindProperty("playerColumns").intValue = 5;
-            so.FindProperty("playerRows").intValue = 4;
-            so.FindProperty("rootCanvas").objectReferenceValue = canvas;
-            so.FindProperty("playerPanel").objectReferenceValue = ui.PlayerPanel;
-            so.FindProperty("objectPanel").objectReferenceValue = ui.ObjectPanel;
-            so.FindProperty("doneButton").objectReferenceValue = ui.DoneButton;
-            so.FindProperty("statusText").objectReferenceValue = ui.StatusText;
-            so.FindProperty("dragController").objectReferenceValue = dragController;
-            so.FindProperty("autoAdvanceOnChange").boolValue = false;
+            SetInt(so, "playerColumns", 5);
+            SetInt(so, "playerRows", 4);
+            SetRef(so, "rootCanvas", canvas);
+            SetRef(so, "playerPanel", ui.PlayerPanel);
+            SetRef(so, "objectPanel", ui.ObjectPanel);
+            SetRef(so, "doneButton", ui.DoneButton);
+            SetRef(so, "statusText", ui.StatusText);
+            SetRef(so, "dragController", dragController);
+            SetBool(so, "autoAdvanceOnChange", false);
             so.ApplyModifiedPropertiesWithoutUndo();
 
             EditorSceneManager.SaveScene(scene, ScenePath);
@@ -399,35 +232,30 @@ namespace ShapeInventory.Editor
 
         private static void EnsureFolder(string path)
         {
-            if (AssetDatabase.IsValidFolder(path)) return;
-            int slash = path.LastIndexOf('/');
-            string parent = path.Substring(0, slash);
-            string leaf = path.Substring(slash + 1);
-            EnsureFolder(parent);
-            AssetDatabase.CreateFolder(parent, leaf);
+            ContentUtil.EnsureFolder(path);
         }
 
-        private static T LoadOrCreate<T>(string path, Func<T> factory) where T : ScriptableObject
+        // Null-safe SerializedObject setters: GameFlowController is edited by another agent, a renamed/removed optional
+        // field must not break scene building (the controller builds missing UI at runtime).
+        private static void SetRef(SerializedObject so, string field, UnityEngine.Object value)
         {
-            T existing = AssetDatabase.LoadAssetAtPath<T>(path);
-            if (existing != null) return existing;
-
-            T created = factory();
-            AssetDatabase.CreateAsset(created, path);
-            return created;
+            SerializedProperty p = so.FindProperty(field);
+            if (p != null) p.objectReferenceValue = value;
+            else Debug.LogWarning("ShapeInventory: GameFlowController has no serialized field '" + field + "'.");
         }
 
-        private static void SetStringArray(SerializedProperty prop, string[] values)
+        private static void SetInt(SerializedObject so, string field, int value)
         {
-            prop.arraySize = values.Length;
-            for (int i = 0; i < values.Length; i++)
-                prop.GetArrayElementAtIndex(i).stringValue = values[i];
+            SerializedProperty p = so.FindProperty(field);
+            if (p != null) p.intValue = value;
+            else Debug.LogWarning("ShapeInventory: GameFlowController has no serialized field '" + field + "'.");
         }
 
-        private static Color ParseColor(string hex)
+        private static void SetBool(SerializedObject so, string field, bool value)
         {
-            Color c;
-            return ColorUtility.TryParseHtmlString(hex, out c) ? c : Color.white;
+            SerializedProperty p = so.FindProperty(field);
+            if (p != null) p.boolValue = value;
+            else Debug.LogWarning("ShapeInventory: GameFlowController has no serialized field '" + field + "'.");
         }
     }
 }
