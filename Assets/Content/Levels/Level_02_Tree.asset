@@ -14,11 +14,34 @@ MonoBehaviour:
   m_EditorClassIdentifier: ShapeInventory.Game::ShapeInventory.Game.LevelData
   targetObject: {fileID: 11400000, guid: 49b880c38006845a183fdd8e2b42bdfa, type: 2}
   startingItems:
-  - {fileID: 11400000, guid: 52d77fbfb62ea4acbbf1c59993e874e3, type: 2}
-  - {fileID: 11400000, guid: c7a3fc234518a475780fbd609edf2e6b, type: 2}
-  - {fileID: 11400000, guid: 23541d573ef484e21a690ed9aa018eac, type: 2}
-  - {fileID: 11400000, guid: 3c4c4ed769a8f4358ab44cbe7bfb390a, type: 2}
-  - {fileID: 11400000, guid: 15c4d5969e0c3442db7e51f120699640, type: 2}
-  - {fileID: 11400000, guid: 52d77fbfb62ea4acbbf1c59993e874e3, type: 2}
-  - {fileID: 11400000, guid: 96c768f918d964f3f91c1ab30cb37988, type: 2}
+  - {fileID: 11400000, guid: 518209b85a2338f49b87ebfa5bf90ead, type: 2}
+  - {fileID: 11400000, guid: f7834760985a74b6daa4048e1aad4368, type: 2}
+  - {fileID: 11400000, guid: 0eae241e7b8c7ec4f8be74de87583481, type: 2}
+  - {fileID: 11400000, guid: c8e40f8a0bc8e3441971eab128c820cc, type: 2}
+  - {fileID: 11400000, guid: 28dad56231cf06e44bd1534f5b07618f, type: 2}
+  - {fileID: 11400000, guid: eb122f14968fe5045a71328e8c3cb24b, type: 2}
+  - {fileID: 11400000, guid: b139bfa0a33ccac4aa2af32a3cd0d37b, type: 2}
   - {fileID: 11400000, guid: 54cf73de23a834ef5b8eb9fc0dab40ae, type: 2}
+  - {fileID: 11400000, guid: 5544d920f250555499ab5248172fd1c5, type: 2}
+  - {fileID: 11400000, guid: 118737f3840e8ca4e9ffb57412fb8aa2, type: 2}
+  - {fileID: 11400000, guid: c30de3be0aad2424180d8884137e46c0, type: 2}
+  - {fileID: 11400000, guid: 6107fbc18ae5dc74aa0508294283e041, type: 2}
+  - {fileID: 11400000, guid: cfd66fdbc3c936845814a4122d261c16, type: 2}
+  - {fileID: 11400000, guid: 355329e3f2dfea74987f6090a4613d71, type: 2}
+  - {fileID: 11400000, guid: 07d938cda8279b943b4c1cad4f80914f, type: 2}
+  objectSprite: {fileID: 21300000, guid: b338b68f951094a44a4addc97d1ad3cd, type: 3}
+  questDescription: I am the old apple tree by the mill, and the whole village shakes
+    my branches. Lumberjacks keep eyeing my trunk, so I'd like a decent shield against
+    them, nothing crazy. I also dream of golden apples, lots and lots of them! And
+    no more snapping in the wind, please.
+  requirements:
+  - type: 5
+    tier: 3
+  - type: 6
+    tier: 2
+  - type: 1
+    tier: 0
+  successText: Golden apples everywhere! And the lumberjacks just walked right past
+    me.
+  partialText: Hm, I feel a bit different. It will do, I guess.
+  failureText: Now my branches are all droopy and the lumberjacks are laughing!

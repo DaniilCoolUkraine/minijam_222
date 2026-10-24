@@ -14,12 +14,34 @@ MonoBehaviour:
   m_EditorClassIdentifier: ShapeInventory.Game::ShapeInventory.Game.LevelData
   targetObject: {fileID: 11400000, guid: 88e24423b23fa440cabd051951da3de5, type: 2}
   startingItems:
-  - {fileID: 11400000, guid: 54f6b02f853fc4e11bea81a0a56e5897, type: 2}
+  - {fileID: 11400000, guid: 0740c4f84034b7a4ead9be7035767495, type: 2}
   - {fileID: 11400000, guid: 52d77fbfb62ea4acbbf1c59993e874e3, type: 2}
-  - {fileID: 11400000, guid: 202a852842c1f467d81b022179f09481, type: 2}
-  - {fileID: 11400000, guid: 23541d573ef484e21a690ed9aa018eac, type: 2}
-  - {fileID: 11400000, guid: d0406f79b6ecf44feb93691b9f6fd2ba, type: 2}
-  - {fileID: 11400000, guid: 54f6b02f853fc4e11bea81a0a56e5897, type: 2}
-  - {fileID: 11400000, guid: 202a852842c1f467d81b022179f09481, type: 2}
-  - {fileID: 11400000, guid: 54cf73de23a834ef5b8eb9fc0dab40ae, type: 2}
-  - {fileID: 11400000, guid: 96c768f918d964f3f91c1ab30cb37988, type: 2}
+  - {fileID: 11400000, guid: 8d4c3309feb65664e8a9b9d36526778f, type: 2}
+  - {fileID: 11400000, guid: 6b36b4d690b2733489944e8da6bc73aa, type: 2}
+  - {fileID: 11400000, guid: 29cbe8b43eb173745a0ef3bd2da3aba6, type: 2}
+  - {fileID: 11400000, guid: b0fcd8fad2b8ee04c886e6d4c7b37c19, type: 2}
+  - {fileID: 11400000, guid: 7994760336fa38643a293e3e8c889264, type: 2}
+  - {fileID: 11400000, guid: d2f4330500d630a4eb5d19591267fae0, type: 2}
+  - {fileID: 11400000, guid: 3c4c4ed769a8f4358ab44cbe7bfb390a, type: 2}
+  - {fileID: 11400000, guid: b139bfa0a33ccac4aa2af32a3cd0d37b, type: 2}
+  - {fileID: 11400000, guid: db4a5bb8d0727fe42887a625524af713, type: 2}
+  - {fileID: 11400000, guid: b04a65cb6b9ede243a19127b14994361, type: 2}
+  - {fileID: 11400000, guid: 0740c4f84034b7a4ead9be7035767495, type: 2}
+  - {fileID: 11400000, guid: da68234cdf4a8e441b474124bdebc782, type: 2}
+  - {fileID: 11400000, guid: 8d4c3309feb65664e8a9b9d36526778f, type: 2}
+  - {fileID: 11400000, guid: 940b4f943b05a8647ada88ef1009d227, type: 2}
+  objectSprite: {fileID: 21300000, guid: c4b25cb6aec75dc4288ce1404d032915, type: 3}
+  questDescription: This is Soggy Susan, my little fishing boat. She leaks in every
+    storm, so I want her hull as tough as a fortress against the waves! Make her
+    quicker too, I'm not picky how much. And she should nick through the harbor reeds,
+    just barely, nothing scary.
+  requirements:
+  - type: 6
+    tier: 3
+  - type: 2
+    tier: 0
+  - type: 3
+    tier: 1
+  successText: Not a drop of water inside, and look at her fly! Thank you!
+  partialText: She floats. Good enough for the lake.
+  failureText: She's sinking and now the fish are laughing at me!
