@@ -174,7 +174,7 @@ namespace ShapeInventory.Editor
         {
             new LevelDef(
                 "Level_01_Axe", "axe",
-                "TODO story for axe",
+                "Hi, I'm Wren the woodcutter. My axe has gone dull and barely cuts. Please make it sharp again!",
                 new[]
                 {
                     new EnchantmentRequirement(EnchantmentType.Sharpness, 0),
@@ -189,12 +189,12 @@ namespace ShapeInventory.Editor
                     "sharpness_dot",
                     "sharpness_i3",
                 },
-                "TODO happy reaction for axe",
-                "TODO neutral reaction for axe",
-                "TODO angry reaction for axe"),
+                "Chop chop! Now that is a sharp axe. Thank you!",
+                "Okay, it cuts. That should do the work.",
+                "No, now my axe is worse than a spoon!"),
             new LevelDef(
                 "Level_02_Pickaxe", "pickaxe",
-                "TODO story for pickaxe",
+                "Dora the miner here, and my arms are noodles. I want to get as much done with every single swing as possible, the best there is! One swing, one tunnel, and then a nap.",
                 new[]
                 {
                     new EnchantmentRequirement(EnchantmentType.Efficiency, 3),
@@ -215,12 +215,12 @@ namespace ShapeInventory.Editor
                     "durability_i3v",
                     "efficiency_l3",
                 },
-                "TODO happy reaction for pickaxe",
-                "TODO neutral reaction for pickaxe",
-                "TODO angry reaction for pickaxe"),
+                "Yay, now I can dig all the way to the mouse caves!",
+                "Okay, the tunnel got a bit longer. That should do the work.",
+                "No, now it's even worse! My arms hurt twice as much!"),
             new LevelDef(
                 "Level_03_Pitchfork", "pitchfork",
-                "TODO story for pitchfork",
+                "Bah, Farmer Hank here. This pitchfork snaps every time I toss a hay bale, so it needs to last. And the prongs should be properly sharp, not just poke around like a toothpick.",
                 new[]
                 {
                     new EnchantmentRequirement(EnchantmentType.Durability, 0),
@@ -244,12 +244,12 @@ namespace ShapeInventory.Editor
                     "sharpness_i3v",
                     "durability_j",
                 },
-                "TODO happy reaction for pitchfork",
-                "TODO neutral reaction for pitchfork",
-                "TODO angry reaction for pitchfork"),
+                "Well, I'll be! Hay flies like butter and nothing snaps! Best fork ever!",
+                "Hmph. It's a fork. It forks. Fine.",
+                "Useless! I've met turnips with more sense than this fork!"),
             new LevelDef(
                 "Level_04_Scissors", "scissors",
-                "TODO story for scissors",
+                "Lina the tailor, darling. My scissors must cut velvet and leather like air: the sharpest in the whole land, legendary! And they must not chip or break after one week, please.",
                 new[]
                 {
                     new EnchantmentRequirement(EnchantmentType.Sharpness, 3),
@@ -276,12 +276,12 @@ namespace ShapeInventory.Editor
                     "durability_l3_90",
                     "durability_dot",
                 },
-                "TODO happy reaction for scissors",
-                "TODO neutral reaction for scissors",
-                "TODO angry reaction for scissors"),
+                "Snip! The velvet falls apart like butter! Darling, you are a genius!",
+                "Well, they cut. The hem is a bit ragged, but it will do.",
+                "Now they chew my cloth! My best silk is ruined, ruined!"),
             new LevelDef(
                 "Level_05_Hammer", "hammer",
-                "TODO story for hammer",
+                "Bruno the builder here. I'm in a hurry, a big one! I want this hammer as fast as possible, ten nails a second. It should be properly sturdy and never break, and take less effort per swing.",
                 new[]
                 {
                     new EnchantmentRequirement(EnchantmentType.Durability, 2),
@@ -311,12 +311,12 @@ namespace ShapeInventory.Editor
                     "protection_l",
                     "durability_l3_270",
                 },
-                "TODO happy reaction for hammer",
-                "TODO neutral reaction for hammer",
-                "TODO angry reaction for hammer"),
+                "Bam bam bam! Ten nails a second and my arm feels great! Fantastic!",
+                "Okay, it hammers. Nothing special, but fine.",
+                "Now I hit my own thumb every time! Take it back!"),
             new LevelDef(
                 "Level_06_Shovel", "shovel",
-                "TODO story for shovel",
+                "Gus the well-digger here, and I'm worn out. I want to move as much dirt per scoop as possible, legendary! The blade should be just slightly sturdy, I do hit rocks. And I'd like to be decently lucky and find treasure down there.",
                 new[]
                 {
                     new EnchantmentRequirement(EnchantmentType.Efficiency, 3),
@@ -348,12 +348,12 @@ namespace ShapeInventory.Editor
                     "efficiency_t180",
                     "luck_i3",
                 },
-                "TODO happy reaction for shovel",
-                "TODO neutral reaction for shovel",
-                "TODO angry reaction for shovel"),
+                "Treasure! A golden spoon! And my back doesn't even hurt!",
+                "I found a button. Not a treasure, but fine.",
+                "Now I only find old boots, and the hole got bigger!"),
             new LevelDef(
                 "Level_07_Plow", "plow",
-                "TODO story for plow",
+                "Farmer Greta here. This plow should do a whole field with the least effort, the best it can be, legendary! It must be properly sturdy on stones and keep my oxen decently safe. Maybe a tiny bit lucky, too.",
                 new[]
                 {
                     new EnchantmentRequirement(EnchantmentType.Durability, 2),
@@ -389,12 +389,12 @@ namespace ShapeInventory.Editor
                     "l3_90",
                     "durability_l3_180",
                 },
-                "TODO happy reaction for plow",
-                "TODO neutral reaction for plow",
-                "TODO angry reaction for plow"),
+                "The whole field in one morning! Sturdy, safe, and I found a coin! Wonderful!",
+                "The field is plowed. Slowly. Well, it will do.",
+                "Now the oxen are sulking and the field is a mess! Out!"),
             new LevelDef(
                 "Level_08_Anvil", "anvil",
-                "TODO story for anvil",
+                "Old Brandt the smith. Forty years of hammering, and this anvil must last forever, the sturdiest ever, and guard me from every spark, as safe as possible! Blades forged on it come out properly sharp, a tiny bit faster.",
                 new[]
                 {
                     new EnchantmentRequirement(EnchantmentType.Durability, 3),
@@ -431,12 +431,12 @@ namespace ShapeInventory.Editor
                     "durability_l3_90",
                     "protection_dot",
                 },
-                "TODO happy reaction for anvil",
-                "TODO neutral reaction for anvil",
-                "TODO angry reaction for anvil"),
+                "Ha! Forty more years of forging! This anvil sings like new!",
+                "Hm. It rings. Not like in my youth, but it rings.",
+                "My poor old anvil! You've wrecked it, you young rascal!"),
             new LevelDef(
                 "Level_09_Scythe", "scythe",
-                "TODO story for scythe",
+                "Reaper Wilma here, and harvest is coming! My scythe must cut as sharp as possible, legendary, and be quite quick, no time to waste! I want the best fortune too, treasure in every sheaf. And just slightly less effort, my back!",
                 new[]
                 {
                     new EnchantmentRequirement(EnchantmentType.Sharpness, 3),
@@ -475,12 +475,12 @@ namespace ShapeInventory.Editor
                     "haste_i3",
                     "luck_o",
                 },
-                "TODO happy reaction for scythe",
-                "TODO neutral reaction for scythe",
-                "TODO angry reaction for scythe"),
+                "A golden harvest in one day! Even the wheat bowed to me!",
+                "The wheat is cut. The fortune can wait for next year.",
+                "Now it cuts nothing and the crows are laughing at me! Shameful!"),
             new LevelDef(
                 "Level_10_Millstone", "millstone",
-                "TODO story for millstone",
+                "Villagers, the flood is coming and this is the last millstone! It must never break, the sturdiest ever, and shield the mill from harm, as safe as possible! Grind properly with less effort, a tiny bit quicker, and quite lucky!",
                 new[]
                 {
                     new EnchantmentRequirement(EnchantmentType.Durability, 3),
@@ -522,9 +522,9 @@ namespace ShapeInventory.Editor
                     "efficiency_l3_180",
                     "haste_l",
                 },
-                "TODO happy reaction for millstone",
-                "TODO neutral reaction for millstone",
-                "TODO angry reaction for millstone"),
+                "The mill stands, the flood is gone, and there is bread for all! You saved the village!",
+                "The mill still turns, barely. We will survive the winter. Maybe.",
+                "The flood took the mill! Everything is flour! Everything!"),
         };
     }
 }

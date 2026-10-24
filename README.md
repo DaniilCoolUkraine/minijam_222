@@ -5,7 +5,7 @@ A small Unity (uGUI, C#, **WebGL only**) puzzle game built around Tetris-shaped 
 The screen is split in two:
 
 - **Left - player inventory:** a plain grid. Every item sits in exactly one cell, whatever its shape.
-- **Right - object inventory:** a grid shaped like the silhouette of the current object (rocket, tree, boat, house, cat, ...). Items keep their Tetris shape here.
+- **Right - object inventory:** a grid shaped like the silhouette of the current object (axe, pickaxe, ... millstone). Items keep their Tetris shape here.
 
 Drag pieces from the left onto the object. Pieces can be dragged back or moved around inside the object. Invalid drops snap back. There is no rotation.
 Press **Done** when you think the object is filled; if the fill check passes the next object is loaded, otherwise the status text says "Not filled yet". After the last object the game shows "All objects complete!" and a **Restart** button.
@@ -23,7 +23,7 @@ Pointer input goes through the EventSystem only, so both the old Input Manager a
 ## Quick start
 
 1. `ShapeInventory -> Create Sample Content` - creates item, object and level assets under `Assets/Content/{Items,Objects,Levels}`
-   (14 item types: tetrominoes I/O/T/S/Z/L/J, dot, dominoes, 3-bars, a 3-cell corner; 5 objects of 24-35 cells; 5 levels whose pieces tile their object exactly).
+   (plain and enchanted pieces, 10 village-tool objects of 20-60 cells and the 10-level campaign described in "The 10-level campaign"; every level's pieces tile its object exactly).
 2. `ShapeInventory -> Build Demo Scene` - creates `Assets/Scenes/Main.unity` (canvas, event system, two panels, Done button, status text, drag controller, `GameFlowController` wired to the sample levels) and adds it to the Build Settings.
 3. Open `Assets/Scenes/Main.unity` if it is not already open and press **Play**.
 
@@ -59,12 +59,40 @@ When one type is placed several times, its highest tier counts. Plain pieces are
 (after the reaction is shown); the end screen sums the scores. A Full result is designed to fill the silhouette 100% - the filled
 shape is the player's hint about which pieces to use.
 
-After pulling this branch run `ShapeInventory -> Create Sample Content` (alias `Upgrade Existing Content`) once. It **updates your existing
-assets in place** (GUIDs and scene references survive), adds 33 enchanted items, fills the five levels (stories, requirements, reactions)
-and generates placeholder sprites in `Assets/Content/Sprites/` only when a file is missing - replace those PNGs with real art, they
-are never overwritten. `ShapeInventory -> Validate Levels` checks that each level still has a Full tiling. You do not have to rebuild
-`Main.unity`: the controller builds the new UI at startup. Level data lives in `Tools/verify_levels.py` (run it, then `--emit` to regenerate
-`Assets/Scripts/Editor/SampleContentData.cs`).
+## The 10-level campaign
+
+Full spec: [`docs/LEVELS.md`](docs/LEVELS.md). Each level is a different object from a village, each with its own owner telling the story:
+
+| # | Object | Requirements (type : tier, 0 = any) | Notes |
+|---|---|---|---|
+| 1 | Axe | sharpness | tutorial: only sharpness pieces exist, any arrangement is a Full result |
+| 2 | Pickaxe | efficiency III | tutorial: one right type, one wrong type; tiers start here |
+| 3 | Pitchfork | durability, sharpness II | tutorial: two right, one wrong |
+| 4 | Scissors | sharpness III, durability | |
+| 5 | Hammer | durability II, efficiency, haste III | |
+| 6 | Shovel | efficiency III, durability I, luck II | plain filler pieces start here |
+| 7 | Plow | durability II, efficiency III, luck I, protection II | |
+| 8 | Anvil | durability III, protection III, sharpness II, haste I | |
+| 9 | Scythe | sharpness III, haste II, luck III, efficiency I | |
+| 10 | Millstone | durability III, efficiency II, protection III, haste I, luck II | finale, 60 cells with a hole |
+
+Every level has a guaranteed Full tiling among its starting pieces (checked by an exact-cover solver). The tiling is the hint: the
+filled silhouette shows which pieces to use, the story hints at the enchantments.
+
+Where things live:
+- `Tools/verify_levels.py` - single source of truth for items, silhouettes and levels. Run it to verify all ten levels; `--emit`
+  regenerates `Assets/Scripts/Editor/SampleContentData.cs`. The plain run fails when that file is out of sync.
+- `Tools/level_texts.py` - stories and the three reaction texts per object. Edit the texts here, then run `--emit`.
+
+After pulling this branch, in Unity run once:
+1. `ShapeInventory -> Create Sample Content` - updates assets in place (GUIDs kept), moves the five old levels onto the first ones,
+   deletes the old rocket / tree / boat / house / cat objects, sprites and unused enchanted items, creates the new objects, items and levels,
+   writes the ten levels into the `levels` array of `Assets/Scenes/Main.unity`, and generates placeholder sprites only when a PNG is missing
+   (replace them with real art, they are never overwritten). It is idempotent.
+2. `ShapeInventory -> Validate Levels` - checks that each level has a Full tiling, requirements and texts.
+   (`ShapeInventory -> Sync Levels Into Main Scene` repeats only the scene part.)
+
+The `.asset` files are not in git for the new content: only Unity can generate them, so the repository keeps the old assets until you run the menu.
 
 ## Main menu and cutscene slot
 
@@ -100,7 +128,7 @@ public static ShapeFillResult IsShapeFilled(IReadOnlyList<PlacedItem> items)
 ```
 
 It receives the items currently placed in the object inventory (each `PlacedItem` has the `ItemInstance` and the grid `Origin`; `PlacedItem.OccupiedCells()` gives absolute cells) and returns a `ShapeFillResult` with `IsFilled`.
-The stub always returns `IsFilled = true`. Because of that, the game flow only calls it when **Done** is pressed - with `autoAdvanceOnChange` on, the stub would complete a level after the first placement.
+The stub always returns `IsFilled = true`. Because of that, the game flow only calls it when **Done** is pressed - there is no auto-advance, so nothing is judged before then. The quest result itself comes from `QuestEvaluator`, not from this stub.
 To implement the real rule you will normally compare the union of all occupied cells with the silhouette cells of the object (`ObjectData.Silhouette` / `IObjectInventory.IsSilhouetteCell`); you may need to add the object to the method's inputs - the signature lives in the frozen `Core` contracts, so change it deliberately and update `GameFlowController.IsObjectFilled`.
 
 ## Architecture
