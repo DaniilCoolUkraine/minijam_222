@@ -40,6 +40,13 @@ namespace ShapeInventory.Editor
             SampleContentBuilder.Run();
         }
 
+        /// <summary>Writes the ten campaign levels into the GameFlowController(s) of Assets/Scenes/Main.unity.</summary>
+        [MenuItem("ShapeInventory/Sync Levels Into Main Scene")]
+        public static void SyncLevelsIntoMainScene()
+        {
+            ContentSceneSync.SyncLevelsIntoMainScene();
+        }
+
         [MenuItem("ShapeInventory/Validate Levels")]
         public static void ValidateLevels()
         {
@@ -51,12 +58,18 @@ namespace ShapeInventory.Editor
         [MenuItem("ShapeInventory/Build Demo Scene")]
         public static void BuildDemoScene()
         {
-            var levels = LoadLevels();
-            if (levels.Count == 0)
+            // Prefer the current campaign (data order). Generate / refresh the content when it is incomplete;
+            // the scene is rebuilt right below, so no separate scene sync is needed.
+            var levels = SampleContentBuilder.LoadCampaignLevels(false);
+            if (levels.Count != SampleContentData.Levels.Length)
             {
-                CreateSampleContent();
-                levels = LoadLevels();
+                SampleContentBuilder.Run(false);
+                levels = SampleContentBuilder.LoadCampaignLevels(true);
             }
+
+            if (levels.Count == 0) levels = LoadLevels();
+            var levelNames = new List<string>();
+            foreach (LevelData level in levels) levelNames.Add(level.name);
 
             EnsureFolder(ScenesDir);
 
@@ -110,7 +123,8 @@ namespace ShapeInventory.Editor
             EditorSceneManager.SaveScene(scene, ScenePath);
             AddSceneToBuildSettings(ScenePath);
             AssetDatabase.SaveAssets();
-            Debug.Log("ShapeInventory: demo scene saved to " + ScenePath + ". Press Play.");
+            Debug.Log("ShapeInventory: demo scene saved to " + ScenePath + " with " + levels.Count + " levels ("
+                      + string.Join(", ", levelNames) + "). Press Play.");
         }
 
         internal static void AddInputModule(GameObject eventSystemGo)
