@@ -1,0 +1,58 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 683b46613461a497db59cbaf3337a841, type: 3}
+  m_Name: Level_07_Plow
+  m_EditorClassIdentifier: ShapeInventory.Game::ShapeInventory.Game.LevelData
+  targetObject: {fileID: 11400000, guid: 435c031b870c8be4a976de3fb36cb305, type: 2}
+  startingItems:
+  - {fileID: 11400000, guid: 9df129a0ebed43c4f85bfc8b8d411c39, type: 2}
+  - {fileID: 11400000, guid: 5708edb5044886249be35b5ba586e554, type: 2}
+  - {fileID: 11400000, guid: 2bd7f0143f85e4a4bbbfeb53349c2ae5, type: 2}
+  - {fileID: 11400000, guid: d35f8b9551847574d985ff25b6bed59c, type: 2}
+  - {fileID: 11400000, guid: fab214acb71a0074aacd14c93c13445e, type: 2}
+  - {fileID: 11400000, guid: e3a37ed313242bc468bfed1bc42d4f09, type: 2}
+  - {fileID: 11400000, guid: 59853e1db297fec41bb2c56ef6ed62a7, type: 2}
+  - {fileID: 11400000, guid: 32881f049f5544d4c813f713781b173f, type: 2}
+  - {fileID: 11400000, guid: a953d282eeef3a240b89a7d3862cfb8b, type: 2}
+  - {fileID: 11400000, guid: 96c768f918d964f3f91c1ab30cb37988, type: 2}
+  - {fileID: 11400000, guid: d3c727fd7ef522b4e8ec317a9cdbaf4d, type: 2}
+  - {fileID: 11400000, guid: c8e40f8a0bc8e3441971eab128c820cc, type: 2}
+  - {fileID: 11400000, guid: b5c27bb3307aa014e85443bc6e356a22, type: 2}
+  - {fileID: 11400000, guid: 28dad56231cf06e44bd1534f5b07618f, type: 2}
+  - {fileID: 11400000, guid: f0e5a6fcc1dd4e14780741a33901dd03, type: 2}
+  - {fileID: 11400000, guid: f6f27e4a0537dc04f99c50579a2e8e25, type: 2}
+  - {fileID: 11400000, guid: 8a48a4dd794ce1c469f93237f1437893, type: 2}
+  - {fileID: 11400000, guid: fe9a9028d5c69e14fb7aacd60d5749ae, type: 2}
+  - {fileID: 11400000, guid: e3a37ed313242bc468bfed1bc42d4f09, type: 2}
+  - {fileID: 11400000, guid: b67816574a6560345b2395800b9f4beb, type: 2}
+  - {fileID: 11400000, guid: c7a3fc234518a475780fbd609edf2e6b, type: 2}
+  - {fileID: 11400000, guid: b10e4137068df0f438f818438847cb1f, type: 2}
+  - {fileID: 11400000, guid: c30de3be0aad2424180d8884137e46c0, type: 2}
+  - {fileID: 11400000, guid: b9b455100a8733e478033a0cbdd31961, type: 2}
+  - {fileID: 11400000, guid: a953d282eeef3a240b89a7d3862cfb8b, type: 2}
+  objectSprite: {fileID: 21300000, guid: 2e42df4c082067d44ab56fab0169d0a6, type: 3}
+  questDescription: Farmer Greta here. This plow should do a whole field with the
+    least effort, the best it can be, legendary! It must be properly sturdy on stones
+    and keep my oxen decently safe. Maybe a tiny bit lucky, too.
+  requirements:
+  - type: 1
+    tier: 2
+  - type: 4
+    tier: 3
+  - type: 5
+    tier: 1
+  - type: 6
+    tier: 2
+  successText: The whole field in one morning! Sturdy, safe, and I found a coin!
+    Wonderful!
+  partialText: The field is plowed. Slowly. Well, it will do.
+  failureText: Now the oxen are sulking and the field is a mess! Out!

@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 683b46613461a497db59cbaf3337a841, type: 3}
+  m_Name: Level_02_Pickaxe
+  m_EditorClassIdentifier: ShapeInventory.Game::ShapeInventory.Game.LevelData
+  targetObject: {fileID: 11400000, guid: a1a813542f64e3b438222f1ba527e471, type: 2}
+  startingItems:
+  - {fileID: 11400000, guid: adc628ac4e7f95245ac73763b10f2702, type: 2}
+  - {fileID: 11400000, guid: 247fde864a26e174b8eccdef6124e511, type: 2}
+  - {fileID: 11400000, guid: fa30171d74eb1f34193e13e3e72757e0, type: 2}
+  - {fileID: 11400000, guid: 1d006c968f4db5245b89cfc92e20b118, type: 2}
+  - {fileID: 11400000, guid: 247fde864a26e174b8eccdef6124e511, type: 2}
+  - {fileID: 11400000, guid: d9398d6bce5f2964bb7398ce7f458fda, type: 2}
+  - {fileID: 11400000, guid: e646061b4ff9e6e458bb81509a27fa7f, type: 2}
+  - {fileID: 11400000, guid: cb925603338a06c4aaec6be6574508d6, type: 2}
+  - {fileID: 11400000, guid: a953d282eeef3a240b89a7d3862cfb8b, type: 2}
+  - {fileID: 11400000, guid: 1bfcdbd1e43d3a546882011e021b9386, type: 2}
+  - {fileID: 11400000, guid: 7056e8119d5b31244872df17ced0f8b5, type: 2}
+  - {fileID: 11400000, guid: 811c558701659d34b88c1b30a58b6bd2, type: 2}
+  - {fileID: 11400000, guid: a8709cc2813d946458f7967b3d21e73d, type: 2}
+  objectSprite: {fileID: 21300000, guid: 2ca8656fb0d3f6b4db7bf8c77e121eb0, type: 3}
+  questDescription: Dora the miner here, and my arms are noodles. I want to get as
+    much done with every single swing as possible, the best there is! One swing,
+    one tunnel, and then a nap.
+  requirements:
+  - type: 4
+    tier: 3
+  successText: Yay, now I can dig all the way to the mouse caves!
+  partialText: Okay, the tunnel got a bit longer. That should do the work.
+  failureText: No, now it's even worse! My arms hurt twice as much!

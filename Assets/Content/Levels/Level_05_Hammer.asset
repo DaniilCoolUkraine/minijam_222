@@ -1,0 +1,50 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 683b46613461a497db59cbaf3337a841, type: 3}
+  m_Name: Level_05_Hammer
+  m_EditorClassIdentifier: ShapeInventory.Game::ShapeInventory.Game.LevelData
+  targetObject: {fileID: 11400000, guid: a9454985d83ceac47838e6bd246f2a52, type: 2}
+  startingItems:
+  - {fileID: 11400000, guid: d1e7b7033e4527a4cb3a6008b6803243, type: 2}
+  - {fileID: 11400000, guid: f0e3971beda3983479b1062901bc38e9, type: 2}
+  - {fileID: 11400000, guid: 39dfd83e821e6a045997b3cecd3c7f0c, type: 2}
+  - {fileID: 11400000, guid: b8fd5b3e60cb22742bb576aae21b0cb5, type: 2}
+  - {fileID: 11400000, guid: 6a94605cb6bbee44ca52fd68e7d0bb87, type: 2}
+  - {fileID: 11400000, guid: 18894312355102a4cb60bbf64fe5a99d, type: 2}
+  - {fileID: 11400000, guid: 1bfcdbd1e43d3a546882011e021b9386, type: 2}
+  - {fileID: 11400000, guid: d9237d566b25cbe4299b872f01aa8a98, type: 2}
+  - {fileID: 11400000, guid: 6fe555fc287e70f42b3f4ff0ed83dab3, type: 2}
+  - {fileID: 11400000, guid: 5544d920f250555499ab5248172fd1c5, type: 2}
+  - {fileID: 11400000, guid: 92a52641faa7d7543b5773967ac1e842, type: 2}
+  - {fileID: 11400000, guid: 1d006c968f4db5245b89cfc92e20b118, type: 2}
+  - {fileID: 11400000, guid: d2f4330500d630a4eb5d19591267fae0, type: 2}
+  - {fileID: 11400000, guid: 7056e8119d5b31244872df17ced0f8b5, type: 2}
+  - {fileID: 11400000, guid: a953d282eeef3a240b89a7d3862cfb8b, type: 2}
+  - {fileID: 11400000, guid: dd7de812b6af57949b34261d73a48509, type: 2}
+  - {fileID: 11400000, guid: ec6147813e2713440ae596b388ff8db9, type: 2}
+  - {fileID: 11400000, guid: 8a930d481545a5a45835c59c1c2430c1, type: 2}
+  - {fileID: 11400000, guid: b0fcd8fad2b8ee04c886e6d4c7b37c19, type: 2}
+  - {fileID: 11400000, guid: e415e1f88cdedef4e9ac5f1a2d4d5057, type: 2}
+  objectSprite: {fileID: 21300000, guid: 47b65408418903c40aacea90ff03745c, type: 3}
+  questDescription: Bruno the builder here. I'm in a hurry, a big one! I want this
+    hammer as fast as possible, ten nails a second. It should be properly sturdy
+    and never break, and take less effort per swing.
+  requirements:
+  - type: 1
+    tier: 2
+  - type: 4
+    tier: 0
+  - type: 2
+    tier: 3
+  successText: Bam bam bam! Ten nails a second and my arm feels great! Fantastic!
+  partialText: Okay, it hammers. Nothing special, but fine.
+  failureText: Now I hit my own thumb every time! Take it back!

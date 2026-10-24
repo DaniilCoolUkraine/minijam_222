@@ -1,0 +1,44 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 683b46613461a497db59cbaf3337a841, type: 3}
+  m_Name: Level_03_Pitchfork
+  m_EditorClassIdentifier: ShapeInventory.Game::ShapeInventory.Game.LevelData
+  targetObject: {fileID: 11400000, guid: ed7a0e2e0963fdf48ae7fb2919f54ad9, type: 2}
+  startingItems:
+  - {fileID: 11400000, guid: 6b36b4d690b2733489944e8da6bc73aa, type: 2}
+  - {fileID: 11400000, guid: b64e382ab9479ef4d8c335b2513313cc, type: 2}
+  - {fileID: 11400000, guid: ae7540006dbe74c418a1bd65a151f535, type: 2}
+  - {fileID: 11400000, guid: 8d4c3309feb65664e8a9b9d36526778f, type: 2}
+  - {fileID: 11400000, guid: 23875dd83a3797a4bbe1028666bbb651, type: 2}
+  - {fileID: 11400000, guid: 3e2b768c6efd88f49b525eead0819010, type: 2}
+  - {fileID: 11400000, guid: 72d5033ffd902ab40ad4833bb6273ba7, type: 2}
+  - {fileID: 11400000, guid: 7994760336fa38643a293e3e8c889264, type: 2}
+  - {fileID: 11400000, guid: 7a168de87056625419c0937f878b13c1, type: 2}
+  - {fileID: 11400000, guid: 5708edb5044886249be35b5ba586e554, type: 2}
+  - {fileID: 11400000, guid: 752137b10a7fa9b4aa037e869f819e83, type: 2}
+  - {fileID: 11400000, guid: 23875dd83a3797a4bbe1028666bbb651, type: 2}
+  - {fileID: 11400000, guid: 8abca845f79ad9048b26fd97e4ec5eea, type: 2}
+  - {fileID: 11400000, guid: 66d1207e8a9d60e459557f01058fc977, type: 2}
+  - {fileID: 11400000, guid: f43a4c727d8301249994dd222fabf59a, type: 2}
+  objectSprite: {fileID: 21300000, guid: 1e32f4836e96a104ea48d4a6cbd80f69, type: 3}
+  questDescription: Bah, Farmer Hank here. This pitchfork snaps every time I toss
+    a hay bale, so it needs to last. And the prongs should be properly sharp, not
+    just poke around like a toothpick.
+  requirements:
+  - type: 1
+    tier: 0
+  - type: 3
+    tier: 2
+  successText: Well, I'll be! Hay flies like butter and nothing snaps! Best fork
+    ever!
+  partialText: Hmph. It's a fork. It forks. Fine.
+  failureText: Useless! I've met turnips with more sense than this fork!
