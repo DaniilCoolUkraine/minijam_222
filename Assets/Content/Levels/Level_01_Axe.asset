@@ -14,19 +14,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: ShapeInventory.Game::ShapeInventory.Game.LevelData
   targetObject: {fileID: 11400000, guid: 0fdfec3da5261014397048c1e899603b, type: 2}
   startingItems:
-  - {fileID: 11400000, guid: 6a9029a6dbe795646a82b0f87ad72779, type: 2}
-  - {fileID: 11400000, guid: ae7540006dbe74c418a1bd65a151f535, type: 2}
-  - {fileID: 11400000, guid: 71d2c22420355a94db6adc8a0a3c6bd8, type: 2}
-  - {fileID: 11400000, guid: 8d4c3309feb65664e8a9b9d36526778f, type: 2}
-  - {fileID: 11400000, guid: 31a9b7ae3d1dcfb44862fdf4c4d008ef, type: 2}
-  - {fileID: 11400000, guid: 8abca845f79ad9048b26fd97e4ec5eea, type: 2}
-  - {fileID: 11400000, guid: 186771d25660ae14291c7e3cc0310bd1, type: 2}
+  - {fileID: 11400000, guid: 23875dd83a3797a4bbe1028666bbb651, type: 2}
   objectSprite: {fileID: 21300000, guid: d32a00f8d5548b94b8e412292a95d05c, type: 3}
-  questDescription: Hi, I'm Wren the woodcutter. My axe has gone dull and barely
-    cuts. Please make it sharp again!
+  questDescription: Hi, I'm Wren the woodcutter. My axe handle snaps like a dry twig
+    whenever I swing it. Please give me a handle that lasts!
   requirements:
-  - type: 3
+  - type: 1
     tier: 0
-  successText: Chop chop! Now that is a sharp axe. Thank you!
-  partialText: Okay, it cuts. That should do the work.
-  failureText: No, now my axe is worse than a spoon!
+  successText: Chop chop! This handle will never snap. Thank you!
+  partialText: Okay, it holds. That should do the work.
+  failureText: Hey, my handle is still bare! I can't chop with my bare hands!
