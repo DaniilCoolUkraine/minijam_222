@@ -238,7 +238,7 @@ namespace ShapeInventory.Tests
         }
 
         [Test]
-        public void Failure_OneRightPlusOneUnrequiredType()
+        public void Partial_OneRightPlusOneUnrequiredType_ScoresZero()
         {
             var placed = Items(
                 Place(EnchantmentType.Durability, Small),
@@ -246,11 +246,12 @@ namespace ShapeInventory.Tests
 
             var r = QuestEvaluator.Evaluate(placed, ExampleRequirements());
 
-            AssertResult(r, QuestOutcome.Failure, 0, 3, 1);
+            // one point for the right type, minus one point for the wrong one
+            AssertResult(r, QuestOutcome.Partial, 0, 3, 1);
         }
 
         [Test]
-        public void Failure_EverythingRightPlusOneUnrequiredType()
+        public void Partial_EverythingRightPlusOneUnrequiredType_LosesOnePoint()
         {
             var placed = Items(
                 Place(EnchantmentType.Durability, Small),
@@ -260,6 +261,43 @@ namespace ShapeInventory.Tests
 
             var r = QuestEvaluator.Evaluate(placed, ExampleRequirements());
 
+            AssertResult(r, QuestOutcome.Partial, 2, 3, 1);
+        }
+
+        [Test]
+        public void Partial_TwoWrongTypesCostTwoPointsButNeverBelowZero()
+        {
+            var placed = Items(
+                Place(EnchantmentType.Durability, Small),
+                Place(EnchantmentType.Sharpness, Small),
+                Place(EnchantmentType.Luck, Small),
+                Place(EnchantmentType.Protection, Small));
+
+            var r = QuestEvaluator.Evaluate(placed, ExampleRequirements());
+            AssertResult(r, QuestOutcome.Partial, 0, 3, 2);
+        }
+
+        [Test]
+        public void ShapeNotFilled_EverythingRight_IsPartialAndCappedBelowMax()
+        {
+            var placed = Items(
+                Place(EnchantmentType.Durability, Small),
+                Place(EnchantmentType.Sharpness, Small),
+                Place(EnchantmentType.Efficiency, Large));
+
+            var r = QuestEvaluator.Evaluate(placed, ExampleRequirements(), false);
+            AssertResult(r, QuestOutcome.Partial, 2, 3, 0);
+
+            var filled = QuestEvaluator.Evaluate(placed, ExampleRequirements(), true);
+            AssertResult(filled, QuestOutcome.Full, 3, 3, 0);
+        }
+
+        [Test]
+        public void ShapeNotFilled_NothingRight_StaysFailure()
+        {
+            var placed = Items(Place(EnchantmentType.Luck, Small));
+
+            var r = QuestEvaluator.Evaluate(placed, ExampleRequirements(), false);
             AssertResult(r, QuestOutcome.Failure, 0, 3, 1);
         }
 

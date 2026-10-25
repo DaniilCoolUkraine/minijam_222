@@ -10,9 +10,10 @@ Unity project version: 6000.4 (Unity 6). Assets already exist in the repo WITH .
   enchantments - the requirement list is NOT shown to the player), `requirements[]` (type + tier, tier 0 = any), and three reaction
   texts: `successText` (happy), `partialText` (neutral), `failureText` (angry).
 - Player presses Done -> `QuestEvaluator.Evaluate(objectModel.PlacedItems, level.Requirements)` -> outcome:
-  - **Full**: applied == required exactly (all requirements met, no unrequired enchantment type applied).
-  - **Partial**: >= 1 requirement met (right type AND right tier), no unrequired type applied, but not everything right.
-  - **Failure**: nothing correct, or any unrequired enchantment type applied.
+  - **Full**: all requirements met, no unrequired enchantment type applied, AND the silhouette is completely filled.
+  - **Partial**: >= 1 requirement met (right type AND right tier) but not Full: something missing, wrong tier, an unrequired type placed as well, or the shape not filled.
+  - **Failure**: nothing correct (nothing placed, or only unrequired types).
+  - Score = requirements met - number of unrequired types (min 0); Partial is capped at max-1, Failure scores 0.
 - **Every outcome advances** to the next level, after the owner's reaction text is shown (player presses Next/Continue).
 - Design rule for content: on a Full result the silhouette is 100% filled. I.e. every level must have a tiling of its silhouette using
   ONLY pieces whose enchantments are exactly the required ones (max tier per type == required tier), so "filled" is the hint.

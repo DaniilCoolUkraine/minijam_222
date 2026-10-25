@@ -6,8 +6,8 @@ using UnityEngine;
 namespace ShapeInventory.Tests
 {
     /// <summary>
-    /// ShapeFillChecker is a placeholder that currently always reports "filled".
-    /// These tests pin that stub behaviour; replace them when the real logic is implemented.
+    /// The IObjectInventory overload is the real check (every silhouette cell covered); the IReadOnlyList overload is
+    /// the legacy placeholder that always reports "filled".
     /// </summary>
     public class ShapeFillCheckerTests
     {
@@ -62,6 +62,51 @@ namespace ShapeInventory.Tests
             var result = ShapeFillChecker.IsShapeFilled(model.PlacedItems);
 
             Assert.IsTrue(result.IsFilled);
+        }
+
+        [Test]
+        public void Real_EmptyObject_IsNotFilled()
+        {
+            var objectData = ObjectData.Create("obj", "obj", Color.gray, "##", "#.");
+            _created.Add(objectData);
+            var model = new ObjectInventoryModel(objectData);
+
+            Assert.IsFalse(ShapeFillChecker.IsShapeFilled(model).IsFilled);
+        }
+
+        [Test]
+        public void Real_PartlyCovered_IsNotFilled()
+        {
+            var objectData = ObjectData.Create("obj", "obj", Color.gray, "##", "#.");
+            var domino = ItemData.Create("domino", "domino", Color.white, "##");
+            _created.Add(objectData);
+            _created.Add(domino);
+            var model = new ObjectInventoryModel(objectData);
+            Assert.IsTrue(model.TryPlace(new ItemInstance(domino), new Vector2Int(0, 0)));
+
+            Assert.IsFalse(ShapeFillChecker.IsShapeFilled(model).IsFilled);
+        }
+
+        [Test]
+        public void Real_FullyCoveredWithTwoPieces_IsFilled()
+        {
+            var objectData = ObjectData.Create("obj", "obj", Color.gray, "##", "#.");
+            var domino = ItemData.Create("domino", "domino", Color.white, "##");
+            var dot = ItemData.Create("dot", "dot", Color.white, "#");
+            _created.Add(objectData);
+            _created.Add(domino);
+            _created.Add(dot);
+            var model = new ObjectInventoryModel(objectData);
+            Assert.IsTrue(model.TryPlace(new ItemInstance(domino), new Vector2Int(0, 0)));
+            Assert.IsTrue(model.TryPlace(new ItemInstance(dot), new Vector2Int(0, 1)));
+
+            Assert.IsTrue(ShapeFillChecker.IsShapeFilled(model).IsFilled);
+        }
+
+        [Test]
+        public void Real_NullInventory_IsNotFilled()
+        {
+            Assert.IsFalse(ShapeFillChecker.IsShapeFilled((IObjectInventory)null).IsFilled);
         }
     }
 }

@@ -2,11 +2,12 @@ namespace ShapeInventory.Core
 {
     public enum QuestOutcome
     {
-        /// <summary>Nothing correct applied, or an unrequired enchantment type was applied.</summary>
+        /// <summary>Nothing correct applied (nothing placed, or only unrequired types).</summary>
         Failure = 0,
-        /// <summary>At least one requirement met, no unrequired type applied, but not everything is right.</summary>
+        /// <summary>At least one requirement met, but not a Full result: something missing, a wrong tier, an unrequired
+        /// type applied as well, or the shape not completely filled.</summary>
         Partial = 1,
-        /// <summary>Applied enchantments equal the required ones exactly.</summary>
+        /// <summary>Applied enchantments equal the required ones exactly AND the object's shape is completely filled.</summary>
         Full = 2
     }
 
@@ -14,7 +15,8 @@ namespace ShapeInventory.Core
     {
         public QuestOutcome Outcome;
 
-        /// <summary>Number of requirements satisfied (right type AND right tier).</summary>
+        /// <summary>Requirements satisfied (right type AND right tier), minus one per wrong type, never below 0.
+        /// Only a Full result reaches MaxScore; a Failure always scores 0.</summary>
         public int Score;
 
         /// <summary>Total number of requirements (the maximum score).</summary>

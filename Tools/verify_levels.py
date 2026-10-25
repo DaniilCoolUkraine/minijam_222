@@ -391,8 +391,11 @@ def item_id(piece):
     return s if e is None else e + "_" + s
 
 
-def evaluate(placed, reqs):
-    """Replica of QuestEvaluator rules. placed: list of (ench or None, shape id). Returns (outcome, score, max_score, wrong)."""
+def evaluate(placed, reqs, sil_cells=None):
+    """Replica of QuestEvaluator (Full needs every requirement, no wrong type AND a completely filled shape;
+    Partial = at least one requirement met otherwise; Failure = none met; score = met - wrong, capped below max unless Full).
+    placed: list of (ench or None, shape id). sil_cells: silhouette size, the shape counts as filled when the placed
+    pieces cover that many cells (None = assume filled). Returns (outcome, score, max_score, wrong)."""
     applied = {}
     for e, s in placed:
         if e is None:
@@ -400,23 +403,26 @@ def evaluate(placed, reqs):
         t = tier_of(len(SHAPE_CELLS[s]))
         if t > applied.get(e, 0):
             applied[e] = t
-    score = 0
+    met = 0
     for e, t in reqs:
         if e in applied and (t <= 0 or applied[e] == t):
-            score += 1
+            met += 1
     req_types = set(e for e, _ in reqs)
     wrong = sum(1 for e in applied if e not in req_types)
     max_score = len(reqs)
-    if wrong > 0:
-        outcome = "Failure"
-    elif score == max_score:
+    filled = sil_cells is None or sum(len(SHAPE_CELLS[s]) for _, s in placed) >= sil_cells
+    if wrong == 0 and filled and met == max_score:
         outcome = "Full"
-    elif score >= 1:
+    elif met >= 1:
         outcome = "Partial"
     else:
         outcome = "Failure"
     if outcome == "Failure":
-        score = 0  # a failed quest never scores (QuestEvaluator)
+        score = 0
+    else:
+        score = max(0, met - wrong)
+        if outcome == "Partial" and max_score > 0 and score >= max_score:
+            score = max_score - 1
     return outcome, score, max_score, wrong
 
 
@@ -787,7 +793,7 @@ def verify():
             len(items), len(tiling), len(distractors), okb, sb.nodes, NODE_LIMIT))
         if okb:
             placed_items = [p for p, _ in sb.placed]
-            outcome, score, max_score, wrong = evaluate(placed_items, reqs)
+            outcome, score, max_score, wrong = evaluate(placed_items, reqs, sil_cells)
             check(outcome == "Full" and score == max_score and wrong == 0, name + ": (b) found tiling is not Full")
             check(len(sb.occupied) == len(sb.sil), name + ": (b) silhouette not 100% filled")
             check(all(p[0] is not None for p in placed_items), name + ": (b) plain piece in the strict tiling")
@@ -805,16 +811,21 @@ def verify():
             wrong_pieces = [d for d in distractors if d[0] is not None and d[0] not in req_types]
             check(len(wrong_pieces) >= 1, name + ": (c) no unrequired-type distractor")
             for d in wrong_pieces:
-                check(can_pack(sil, [d]) and evaluate([d], reqs)[0] == "Failure", "%s: (c) %s does not give Failure" % (name, item_id(d)))
-                check(evaluate([d, tiling[0]], reqs)[0] == "Failure", "%s: (c) %s + a right piece must be Failure" % (name, item_id(d)))
-            print("  c) a single unrequired piece (%d kinds) gives Failure" % len(set(wrong_pieces)))
+                check(can_pack(sil, [d]) and evaluate([d], reqs, sil_cells)[0] == "Failure", "%s: (c) %s does not give Failure" % (name, item_id(d)))
+                right = [t for t in tiling if evaluate([t], reqs, sil_cells)[0] != "Failure"]
+                check(right, name + ": (c) no single tiling piece meets a requirement")
+                if right:
+                    mixed = evaluate([d, right[0]], reqs, sil_cells)
+                    check(mixed[0] == "Partial" and mixed[1] < mixed[2],
+                          "%s: (c) %s + a right piece must be a Partial result below the maximum score (got %s)" % (name, item_id(d), mixed))
+            print("  c) a single unrequired piece (%d kinds) gives Failure; with a right piece it is a Partial below max score" % len(set(wrong_pieces)))
         if num >= 2:
-            partial_single = [t for t in tiling if evaluate([t], reqs)[0] == "Partial" and can_pack(sil, [t])]
+            partial_single = [t for t in tiling if evaluate([t], reqs, sil_cells)[0] == "Partial" and can_pack(sil, [t])]
             check(partial_single, name + ": (c) no single right piece gives Partial")
             desc = ""
             for o in overshoot:
                 for t in tiling:
-                    if t[0] != o[0] and can_pack(sil, [o, t]) and evaluate([o, t], reqs)[0] == "Partial":
+                    if t[0] != o[0] and can_pack(sil, [o, t]) and evaluate([o, t], reqs, sil_cells)[0] == "Partial":
                         desc = "%s + %s" % (item_id(o), item_id(t))
                         break
                 if desc:
@@ -827,8 +838,8 @@ def verify():
 
         # ---- d) level 1: the single stick is the whole inventory
         if num == 1:
-            check(evaluate(list(items), reqs)[0] == "Full", "L1: placing the stick must be Full")
-            check(evaluate([], reqs)[0] == "Failure", "L1: an empty object must be Failure")
+            check(evaluate(list(items), reqs, sil_cells)[0] == "Full", "L1: placing the stick must be Full")
+            check(evaluate([], reqs, sil_cells)[0] == "Failure", "L1: an empty object must be Failure")
             print("  d) L1: one durability stick; placing it is Full, placing nothing is Failure")
 
     # ---- campaign level checks

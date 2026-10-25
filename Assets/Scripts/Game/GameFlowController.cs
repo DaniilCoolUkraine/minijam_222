@@ -11,7 +11,8 @@ namespace ShapeInventory.Game
     /// Level flow: builds the models for a level, (re)binds the two inventory views and runs the quest loop:
     /// Playing -> (Done) -> ShowingResult (owner's reaction, inventories locked) -> (Next) -> next level,
     /// and after the last level a Summary with a Restart button. Every outcome advances.
-    /// <see cref="ShapeFillChecker"/> is NOT used to gate anything; <see cref="QuestEvaluator"/> decides.
+    /// <see cref="QuestEvaluator"/> decides the outcome; a Full result also requires the shape to be completely filled
+    /// (<see cref="ShapeFillChecker"/>). Done is never blocked.
     /// Missing UI references (panels, button, status/quest/result texts, drag controller) are created in code at startup.
     /// </summary>
     [DisallowMultipleComponent]
@@ -327,7 +328,7 @@ namespace ShapeInventory.Game
             var level = (levels != null && _levelIndex >= 0 && _levelIndex < levels.Length) ? levels[_levelIndex] : null;
             if (level == null || _objectModel == null) return;
 
-            QuestResult result = QuestEvaluator.Evaluate(_objectModel.PlacedItems, level.Requirements);
+            QuestResult result = QuestEvaluator.Evaluate(_objectModel.PlacedItems, level.Requirements, IsObjectFilled());
             if (result == null)
             {
                 result = new QuestResult
@@ -460,7 +461,7 @@ namespace ShapeInventory.Game
 
         private bool IsObjectFilled()
         {
-            ShapeFillResult result = ShapeFillChecker.IsShapeFilled(_objectModel.PlacedItems);
+            ShapeFillResult result = ShapeFillChecker.IsShapeFilled(_objectModel);
             return result != null && result.IsFilled;
         }
 

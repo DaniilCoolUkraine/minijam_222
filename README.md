@@ -51,11 +51,11 @@ Pressing Done runs `QuestEvaluator.Evaluate(placedItems, level.Requirements)` (`
 
 | Outcome | Rule | Shown as |
 |---|---|---|
-| Full | every requirement met (right type AND right tier) and no enchantment type applied that the quest did not ask for | green, `successText` |
-| Partial | at least one requirement met, nothing unrequired applied, but not everything right (missing one, or right type at the wrong tier) | amber, `partialText` |
-| Failure | nothing correct, or any unrequired enchantment applied | red, `failureText` |
+| Full | every requirement met (right type AND right tier), no enchantment type applied that the quest did not ask for, AND the silhouette completely filled | green, `successText` |
+| Partial | at least one requirement met, but not a Full result: something missing, a type at the wrong tier, an unrequested type placed as well (a "partial failure"), or the shape not completely filled | amber, `partialText` |
+| Failure | nothing correct (nothing placed, or only unrequested types) | red, `failureText` |
 
-A Failure always scores 0, even when every requirement was met alongside an unrequested type. When one type is placed several times, its highest tier counts. Plain pieces are ignored. **Every outcome advances** to the next level
+Score = requirements met minus one point per unrequested enchantment type (never below 0). Only a Full result reaches the maximum score; a Partial result is capped one point below it and a Failure always scores 0, so the number never contradicts the reaction text. When one type is placed several times, its highest tier counts. Plain pieces are ignored. **Every outcome advances** to the next level
 (after the reaction is shown); the end screen sums the scores. A Full result is designed to fill the silhouette 100% - the filled
 shape is the player's hint about which pieces to use.
 
@@ -120,17 +120,13 @@ Note: browsers only start audio after a user gesture, so a GIF-with-sound cutsce
 - Serve `Build/WebGL` over HTTP (for example `python3 -m http.server` inside that folder). With Gzip compression the server must send `Content-Encoding: gzip` for `.gz` files, otherwise the decompression fallback is used (slower start-up, but works on simple static hosts).
 - The UI uses a Canvas Scaler (Scale With Screen Size, 1920x1080, match 0.5), so it adapts to the browser window; cell sizes are recomputed when the panels change size.
 
-## ShapeFillChecker - where the "is it filled?" rule lives
+## ShapeFillChecker - the "is it filled?" rule
 
-`Assets/Scripts/Core/Rules/ShapeFillChecker.cs` is a **placeholder for you to implement**:
-
-```csharp
-public static ShapeFillResult IsShapeFilled(IReadOnlyList<PlacedItem> items)
-```
-
-It receives the items currently placed in the object inventory (each `PlacedItem` has the `ItemInstance` and the grid `Origin`; `PlacedItem.OccupiedCells()` gives absolute cells) and returns a `ShapeFillResult` with `IsFilled`.
-The stub always returns `IsFilled = true`. Because of that, the game flow only calls it when **Done** is pressed - there is no auto-advance, so nothing is judged before then. The quest result itself comes from `QuestEvaluator`, not from this stub.
-To implement the real rule you will normally compare the union of all occupied cells with the silhouette cells of the object (`ObjectData.Silhouette` / `IObjectInventory.IsSilhouetteCell`); you may need to add the object to the method's inputs - the signature lives in the frozen `Core` contracts, so change it deliberately and update `GameFlowController.IsObjectFilled`.
+`Assets/Scripts/Core/Rules/ShapeFillChecker.cs`: `ShapeFillChecker.IsShapeFilled(IObjectInventory)` returns `IsFilled = true` when every silhouette
+cell is covered by a placed item (items can neither overlap nor leave the silhouette, so counting covered silhouette cells is enough).
+`GameFlowController` calls it when **Done** is pressed and passes the result to `QuestEvaluator.Evaluate(placed, requirements, shapeFilled)`:
+only a filled shape can be a Full result. Done is never blocked. The old `IsShapeFilled(IReadOnlyList<PlacedItem>)` overload is a
+leftover placeholder that always returns true (it cannot know the silhouette).
 
 ## Architecture
 

@@ -9,22 +9,31 @@ namespace ShapeInventory.Core
     ///    tier (ItemData.Tier). For each enchantment TYPE keep the HIGHEST tier among placed items of that type.
     ///    Items with Enchantment == None are neutral filler and are ignored completely.
     /// 2. A requirement is satisfied when its type is applied AND (requirement.AnyTier OR the applied tier of
-    ///    that type == requirement.Tier exactly). Score = number of satisfied requirements. MaxScore = required.Count.
+    ///    that type == requirement.Tier exactly). Satisfied = number of satisfied requirements. MaxScore = required.Count.
     /// 3. WrongCount = number of applied enchantment TYPES that do not appear in ANY requirement.
-    /// 4. Outcome:
-    ///      Full    : Score == MaxScore and WrongCount == 0.
-    ///      Partial : Score >= 1 and WrongCount == 0 and not Full
-    ///                (some requirements missing, or a required type applied at the wrong tier).
-    ///      Failure : everything else (Score == 0, or WrongCount > 0, or nothing applied).
-    ///    A Failure never scores: when the outcome is Failure, Score is reported as 0 (a type the quest did not ask for
-    ///    ruins the job even if every requirement was met), so the shown score and the total never reward a failed quest.
-    ///    Edge case: empty/null requirements -> Full when WrongCount == 0, otherwise Failure (MaxScore = 0).
-    /// 5. Null/empty placed list is valid input (Failure when there are requirements).
-    /// 6. Pure function: no allocations are required to be avoided, no UnityEngine state, no side effects.
+    /// 4. Outcome (shapeFilled = the object's silhouette is 100% covered, see ShapeFillChecker):
+    ///      Full    : every requirement satisfied, WrongCount == 0 AND shapeFilled.
+    ///      Partial : Satisfied >= 1 and not Full. This includes "everything right but a wrong type also applied"
+    ///                (a partial failure) and "everything right but the shape is not filled".
+    ///      Failure : Satisfied == 0 (nothing right, nothing applied, or only wrong types).
+    ///    Edge case: empty/null requirements -> Full when WrongCount == 0 and shapeFilled, otherwise Failure (MaxScore = 0).
+    /// 5. Score = Satisfied - WrongCount (each wrong type costs one point), never below 0. Only a Full result can reach
+    ///    MaxScore: a Partial result is capped at MaxScore - 1, and a Failure always scores 0, so the shown score
+    ///    never contradicts the reaction text.
+    /// 6. Null/empty placed list is valid input (Failure when there are requirements).
+    /// 7. Pure function: no UnityEngine state, no side effects.
+    /// The overload without shapeFilled assumes the shape IS filled.
     /// </summary>
     public static class QuestEvaluator
     {
+        /// <summary>Same as the three-argument overload with shapeFilled = true.</summary>
         public static QuestResult Evaluate(IReadOnlyList<PlacedItem> placed, IReadOnlyList<EnchantmentRequirement> required)
+        {
+            return Evaluate(placed, required, true);
+        }
+
+        public static QuestResult Evaluate(IReadOnlyList<PlacedItem> placed, IReadOnlyList<EnchantmentRequirement> required,
+            bool shapeFilled)
         {
             // Highest tier per applied enchantment type. None / missing data is ignored.
             var applied = new Dictionary<EnchantmentType, int>();
@@ -65,12 +74,13 @@ namespace ShapeInventory.Core
             }
 
             QuestOutcome outcome;
-            if (wrongCount > 0) outcome = QuestOutcome.Failure;
-            else if (score == maxScore) outcome = QuestOutcome.Full; // also covers empty requirements
+            if (wrongCount == 0 && shapeFilled && score == maxScore) outcome = QuestOutcome.Full; // also covers empty requirements
             else if (score >= 1) outcome = QuestOutcome.Partial;
             else outcome = QuestOutcome.Failure;
 
-            if (outcome == QuestOutcome.Failure) score = 0;
+            int shownScore = outcome == QuestOutcome.Failure ? 0 : System.Math.Max(0, score - wrongCount);
+            if (outcome == QuestOutcome.Partial && maxScore > 0 && shownScore >= maxScore) shownScore = maxScore - 1;
+            score = shownScore;
 
             return new QuestResult
             {
