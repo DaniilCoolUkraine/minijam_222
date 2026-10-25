@@ -20,10 +20,10 @@ TEXTS = {
         "partial": "Okay, the tunnel got a bit longer. That should do the work.",
         "failure": "No, now it's even worse! My arms hurt twice as much!",
     },
-    # 3. Farmer Hank: durability II (handle), sharpness II (prongs)
+    # 3. Farmer Hank: durability II (handle), sharpness II (left prong), efficiency I (right prong)
     "pitchfork": {
         "story": "Bah, Farmer Hank here. The handle snaps every time I toss a hay bale, so make it properly sturdy. "
-                 "The prongs should be decently sharp, but nothing crazy, I only stab hay.",
+                 "The left prong should be decently sharp, and the right one needs just a bit less effort. Nothing crazy!",
         "success": "Well, I'll be! Hay flies like butter and nothing snaps! Best fork ever!",
         "partial": "Hmph. It's a fork. It forks. Fine.",
         "failure": "Useless! I've met turnips with more sense than this fork!",

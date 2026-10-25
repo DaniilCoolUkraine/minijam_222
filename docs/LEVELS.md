@@ -29,7 +29,7 @@ Types: durability, haste, sharpness, efficiency, luck, protection.
 |---|---|---|---|---|
 | 1 | axe | durability:0 | 1 inventory entry: durability i4v (the stick) | tutorial. Nothing else. Placing it = Full, placing nothing = Failure |
 | 2 | pickaxe | efficiency:3, durability:1 | 3 entries: efficiency T (head, 4 cells) + durability domino (handle, 2 cells), plus 1 wrong: haste domino | tutorial. Tiers start here; Partial = only one of the two right pieces |
-| 3 | pitchfork | durability:2, sharpness:2 | 5 entries: durability bar-3 (handle), sharpness corner (3 cells) + sharpness domino (prongs), plus 2 wrong: haste domino and sharpness 4-bar | tutorial. The 4-bar is the right type at the wrong tier (III instead of II) |
+| 3 | pitchfork | durability:2, sharpness:2, efficiency:1 | 5 entries: durability bar-3 (handle), sharpness corner (left prong, 3 cells), efficiency domino (right prong), plus 2 wrong: haste domino and sharpness 4-bar | tutorial. Each part has its own requirement, so Full needs all three pieces (= filled shape). The 4-bar is the right type at the wrong tier (III instead of II) |
 | 4 | scissors | sharpness:3, durability:0 | sharpness + durability (right), luck + haste (wrong) | 1-2 wrong-tier decoys; no plain pieces |
 | 5 | hammer | durability:2, efficiency:0, haste:3 | the three right ones, luck + protection (wrong) | wrong-tier decoys; no plain pieces |
 | 6 | shovel | efficiency:3, durability:1, luck:2 | the three right ones + sharpness (wrong) | wrong-tier decoys, plain filler pieces start here |

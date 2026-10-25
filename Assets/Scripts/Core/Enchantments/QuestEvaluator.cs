@@ -16,6 +16,8 @@ namespace ShapeInventory.Core
     ///      Partial : Score >= 1 and WrongCount == 0 and not Full
     ///                (some requirements missing, or a required type applied at the wrong tier).
     ///      Failure : everything else (Score == 0, or WrongCount > 0, or nothing applied).
+    ///    A Failure never scores: when the outcome is Failure, Score is reported as 0 (a type the quest did not ask for
+    ///    ruins the job even if every requirement was met), so the shown score and the total never reward a failed quest.
     ///    Edge case: empty/null requirements -> Full when WrongCount == 0, otherwise Failure (MaxScore = 0).
     /// 5. Null/empty placed list is valid input (Failure when there are requirements).
     /// 6. Pure function: no allocations are required to be avoided, no UnityEngine state, no side effects.
@@ -67,6 +69,8 @@ namespace ShapeInventory.Core
             else if (score == maxScore) outcome = QuestOutcome.Full; // also covers empty requirements
             else if (score >= 1) outcome = QuestOutcome.Partial;
             else outcome = QuestOutcome.Failure;
+
+            if (outcome == QuestOutcome.Failure) score = 0;
 
             return new QuestResult
             {

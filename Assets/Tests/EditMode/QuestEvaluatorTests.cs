@@ -246,7 +246,7 @@ namespace ShapeInventory.Tests
 
             var r = QuestEvaluator.Evaluate(placed, ExampleRequirements());
 
-            AssertResult(r, QuestOutcome.Failure, 1, 3, 1);
+            AssertResult(r, QuestOutcome.Failure, 0, 3, 1);
         }
 
         [Test]
@@ -260,7 +260,7 @@ namespace ShapeInventory.Tests
 
             var r = QuestEvaluator.Evaluate(placed, ExampleRequirements());
 
-            AssertResult(r, QuestOutcome.Failure, 3, 3, 1);
+            AssertResult(r, QuestOutcome.Failure, 0, 3, 1);
         }
 
         [Test]

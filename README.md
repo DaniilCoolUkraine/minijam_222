@@ -55,7 +55,7 @@ Pressing Done runs `QuestEvaluator.Evaluate(placedItems, level.Requirements)` (`
 | Partial | at least one requirement met, nothing unrequired applied, but not everything right (missing one, or right type at the wrong tier) | amber, `partialText` |
 | Failure | nothing correct, or any unrequired enchantment applied | red, `failureText` |
 
-When one type is placed several times, its highest tier counts. Plain pieces are ignored. **Every outcome advances** to the next level
+A Failure always scores 0, even when every requirement was met alongside an unrequested type. When one type is placed several times, its highest tier counts. Plain pieces are ignored. **Every outcome advances** to the next level
 (after the reaction is shown); the end screen sums the scores. A Full result is designed to fill the silhouette 100% - the filled
 shape is the player's hint about which pieces to use.
 
@@ -67,7 +67,7 @@ Full spec: [`docs/LEVELS.md`](docs/LEVELS.md). Each level is a different object 
 |---|---|---|---|
 | 1 | Axe | durability | tutorial: the silhouette is just the handle, the inventory is one stick (1 entry) |
 | 2 | Pickaxe | efficiency III, durability I | tutorial: head + handle, 3 entries = 2 right + 1 wrong type; tiers start here |
-| 3 | Pitchfork | durability II, sharpness II | tutorial: 5 entries = 3 right + 2 wrong (one wrong type, one right type at the wrong tier) |
+| 3 | Pitchfork | durability II, sharpness II, efficiency I | tutorial: 5 entries = 3 right + 2 wrong (one wrong type, one right type at the wrong tier); every part has its own requirement, so Full needs all three pieces |
 | 4 | Scissors | sharpness III, durability | |
 | 5 | Hammer | durability II, efficiency, haste III | |
 | 6 | Shovel | efficiency III, durability I, luck II | plain filler pieces start here |
